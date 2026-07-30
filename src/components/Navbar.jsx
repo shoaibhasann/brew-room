@@ -1,308 +1,456 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { EASE } from './ui'
+import { SITE, NAV_LINKS } from '../data/site'
+import { stopScroll, startScroll } from '../lib/scroll'
 
-const SunIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <circle cx="12" cy="12" r="5"/>
-    <line x1="12" y1="1" x2="12" y2="3"/>
-    <line x1="12" y1="21" x2="12" y2="23"/>
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-    <line x1="1" y1="12" x2="3" y2="12"/>
-    <line x1="21" y1="12" x2="23" y2="12"/>
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-  </svg>
-)
+/* ─────────────────────────────────────────────────────────────
+   NAVBAR — fixed editorial top bar on the cream paper site.
+   Transparent at the top of the page (espresso ink straight on
+   paper), condensing to a blurred paper bar with a hairline
+   border on scroll.
+   Mobile (<880px): full-screen overlay menu with staggered
+   Playfair links and gold index numbers.
+   ───────────────────────────────────────────────────────────── */
 
-const MoonIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-  </svg>
-)
-
-const MenuIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <line x1="3" y1="6" x2="21" y2="6"/>
-    <line x1="3" y1="12" x2="21" y2="12"/>
-    <line x1="3" y1="18" x2="21" y2="18"/>
-  </svg>
-)
-
-const CloseIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18"/>
-    <line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-)
-
-const navLinks = [
-  { label: 'About', href: '#about' },
-  { label: 'Menu', href: '#menu' },
-  { label: 'Gallery', href: '#gallery' },
-  { label: 'Experience', href: '#experience' },
-  { label: 'Contact', href: '#contact' },
-]
-
-export default function Navbar({ theme, toggleTheme }) {
+export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const reduce = useReducedMotion()
+  const overlayRef = useRef(null)
 
+  /* Scroll condensation */
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 60)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    const onScroll = () => setScrolled(window.scrollY > 60)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  /* Body scroll lock while the overlay is open (class lives in index.css);
+     Lenis must pause too — CSS overflow alone doesn't stop its scrolling */
+  useEffect(() => {
+    document.body.classList.toggle('menu-open', menuOpen)
+    if (menuOpen) stopScroll()
+    else if (!document.body.classList.contains('splash-active')) startScroll()
+    return () => document.body.classList.remove('menu-open')
+  }, [menuOpen])
+
+  /* Close on Escape / viewport growth; trap Tab inside the overlay and
+     return focus to the burger button on close */
+  useEffect(() => {
+    if (!menuOpen) return
+    const opener = document.activeElement
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false)
+        return
+      }
+      if (e.key !== 'Tab') return
+      const overlay = overlayRef.current
+      if (!overlay) return
+      const nodes = overlay.querySelectorAll('a[href], button')
+      if (!nodes.length) return
+      const list = [...nodes]
+      const first = list[0]
+      const last = list[list.length - 1]
+      if (!overlay.contains(document.activeElement)) {
+        e.preventDefault()
+        first.focus()
+      } else if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    const mq = window.matchMedia('(min-width: 880px)')
+    const onChange = () => mq.matches && setMenuOpen(false)
+    window.addEventListener('keydown', onKey)
+    mq.addEventListener('change', onChange)
+    /* Focus the first link once the overlay has mounted */
+    const focusTimer = requestAnimationFrame(() => {
+      overlayRef.current?.querySelector('a[href]')?.focus()
+    })
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      mq.removeEventListener('change', onChange)
+      cancelAnimationFrame(focusTimer)
+      if (opener instanceof HTMLElement) opener.focus()
+    }
+  }, [menuOpen])
+
+  const condensed = scrolled && !menuOpen
+
+  /* Backgrounds derive from the paper tokens themselves — no
+     literals to drift out of sync */
+  const barBg = condensed
+    ? 'color-mix(in srgb, var(--color-bg) 88%, transparent)'
+    : 'transparent'
+  const overlayBg = 'color-mix(in srgb, var(--color-bg) 98%, transparent)'
 
   return (
     <>
-      <motion.nav
+      <style>{`
+        .nav-link {
+          position: relative;
+          font-family: var(--font-body);
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          text-decoration: none;
+          color: var(--color-text-secondary);
+          padding: 8px 2px;
+          transition: color 0.3s var(--ease-lux);
+        }
+        .nav-link::after {
+          content: '';
+          position: absolute;
+          left: 2px;
+          right: 2px;
+          bottom: 2px;
+          height: 1px;
+          background: var(--color-accent);
+          transform: scaleX(0);
+          transform-origin: left;
+          transition: transform 0.35s var(--ease-lux);
+        }
+        .nav-link:hover { color: var(--color-accent); }
+        .nav-link:hover::after { transform: scaleX(1); }
+
+        .nav-iconbtn {
+          width: 44px;
+          height: 44px;
+          flex: none;
+          border-radius: 50%;
+          border: 1px solid var(--color-border-strong);
+          background: transparent;
+          color: var(--color-text-primary);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: border-color 0.3s var(--ease-lux), color 0.3s var(--ease-lux);
+        }
+        .nav-iconbtn:hover {
+          border-color: var(--color-accent);
+          color: var(--color-accent);
+        }
+
+        .nav-burger { display: none; }
+
+        /* Hamburger ⇄ cross morph — same three bars, animated in place */
+        .nav-burger-lines {
+          position: relative;
+          width: 20px;
+          height: 14px;
+          display: block;
+        }
+        .nav-burger-lines span {
+          position: absolute;
+          left: 0;
+          width: 100%;
+          height: 1.8px;
+          border-radius: 2px;
+          background: currentColor;
+          transition: transform 0.42s var(--ease-lux), opacity 0.28s var(--ease-lux),
+                      top 0.42s var(--ease-lux);
+        }
+        .nav-burger-lines span:nth-child(1) { top: 0; }
+        .nav-burger-lines span:nth-child(2) { top: 6.1px; }
+        .nav-burger-lines span:nth-child(3) { top: 12.2px; }
+        .nav-burger--open .nav-burger-lines span:nth-child(1) {
+          top: 6.1px;
+          transform: rotate(45deg);
+        }
+        .nav-burger--open .nav-burger-lines span:nth-child(2) {
+          opacity: 0;
+          transform: scaleX(0.35);
+        }
+        .nav-burger--open .nav-burger-lines span:nth-child(3) {
+          top: 6.1px;
+          transform: rotate(-45deg);
+        }
+
+        /* display lives here (not inline) so the media queries below can win */
+        .nav-desktop { display: flex; }
+
+        .nav-mlink {
+          color: var(--color-text-primary);
+          transition: color 0.3s var(--ease-lux);
+        }
+        .nav-mlink:hover,
+        .nav-mlink:focus-visible { color: var(--color-accent); }
+
+        .nav-contact a {
+          color: var(--color-text-secondary);
+          text-decoration: none;
+          transition: color 0.3s var(--ease-lux);
+        }
+        .nav-contact a:hover { color: var(--color-accent); }
+
+        @media (max-width: 879px) {
+          .nav-desktop, .nav-reserve-wrap { display: none; }
+          .nav-burger { display: inline-flex; }
+        }
+        @media (min-width: 880px) {
+          .nav-overlay { display: none !important; }
+        }
+      `}</style>
+
+      <header
         style={{
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
-          zIndex: 100,
-          padding: scrolled ? '14px 0' : '24px 0',
-          background: scrolled
-            ? theme === 'dark'
-              ? 'rgba(13,10,7,0.92)'
-              : 'rgba(250,248,245,0.92)'
-            : 'transparent',
-          backdropFilter: scrolled ? 'blur(20px)' : 'none',
-          borderBottom: scrolled ? '1px solid var(--color-border)' : '1px solid transparent',
-          transition: 'all 0.4s ease',
+          zIndex: 1100,
+          background: barBg,
+          borderBottom: `1px solid ${condensed ? 'var(--color-border)' : 'transparent'}`,
+          backdropFilter: condensed ? 'blur(20px)' : 'none',
+          WebkitBackdropFilter: condensed ? 'blur(20px)' : 'none',
+          padding: condensed ? '12px 0' : '26px 0',
+          transition:
+            'background-color 0.4s var(--ease-lux), border-color 0.4s var(--ease-lux), padding 0.4s var(--ease-lux)',
         }}
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.7, delay: 0.2 }}
       >
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '0 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-          {/* Logo */}
-          <motion.a
+        <div
+          className="container-site"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'clamp(20px, 3vw, 44px)',
+          }}
+        >
+          {/* Wordmark */}
+          <a
             href="#"
+            aria-label="The Brew Room — back to top"
             style={{
-              textDecoration: 'none',
-              display: 'flex',
+              display: 'inline-flex',
               flexDirection: 'column',
-              gap: '1px',
-            }}
-            whileHover={{ scale: 1.02 }}
-          >
-            <span style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontSize: '10px',
-              letterSpacing: '4px',
-              color: 'var(--color-accent)',
-              textTransform: 'uppercase',
-            }}>The</span>
-            <span style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: '22px',
-              fontWeight: '500',
-              color: 'var(--color-text-primary)',
+              gap: 4,
               lineHeight: 1,
-              letterSpacing: '-0.5px',
-            }}>Brew Room</span>
-          </motion.a>
-
-          {/* Desktop nav links */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }} className="desktop-nav">
-            {navLinks.map((link, i) => (
-              <motion.a
-                key={link.label}
-                href={link.href}
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  letterSpacing: '0.5px',
-                  color: 'var(--color-text-secondary)',
-                  textDecoration: 'none',
-                  textTransform: 'uppercase',
-                  position: 'relative',
-                }}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + i * 0.08 }}
-                whileHover={{ color: 'var(--color-accent)' }}
-              >
-                {link.label}
-                <motion.div
-                  style={{
-                    position: 'absolute',
-                    bottom: '-4px',
-                    left: 0,
-                    height: '1px',
-                    background: 'var(--color-accent)',
-                    width: 0,
-                  }}
-                  whileHover={{ width: '100%' }}
-                  transition={{ duration: 0.25 }}
-                />
-              </motion.a>
-            ))}
-          </div>
-
-          {/* Right controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Theme toggle */}
-            <motion.button
-              onClick={toggleTheme}
+              textDecoration: 'none',
+              flex: 'none',
+            }}
+          >
+            <span
               style={{
-                background: 'var(--color-card)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '50px',
-                padding: '8px 14px',
-                cursor: 'pointer',
-                color: 'var(--color-accent)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-              whileHover={{ scale: 1.05, borderColor: 'var(--color-accent)' }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={theme}
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-                </motion.span>
-              </AnimatePresence>
-            </motion.button>
-
-            {/* Reserve CTA - desktop */}
-            <motion.a
-              href="#contact"
-              style={{
-                background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-dark))',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                padding: '10px 20px',
-                cursor: 'pointer',
-                fontFamily: "'Inter', sans-serif",
-                fontSize: '12px',
-                fontWeight: '600',
-                letterSpacing: '1px',
+                fontFamily: 'var(--font-body)',
+                fontSize: 9,
+                fontWeight: 600,
+                letterSpacing: '0.46em',
                 textTransform: 'uppercase',
-                textDecoration: 'none',
+                color: 'var(--color-accent)',
               }}
-              whileHover={{ scale: 1.04, boxShadow: '0 8px 24px rgba(212,160,85,0.4)' }}
-              whileTap={{ scale: 0.97 }}
-              className="desktop-cta"
             >
-              Reserve
-            </motion.a>
-
-            {/* Mobile menu button */}
-            <motion.button
-              onClick={() => setMobileOpen(!mobileOpen)}
+              The
+            </span>
+            <span
               style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
+                fontFamily: 'var(--font-display)',
+                fontSize: 22,
+                fontWeight: 400,
+                letterSpacing: '0.01em',
                 color: 'var(--color-text-primary)',
-                padding: '4px',
-                display: 'none',
               }}
-              className="mobile-menu-btn"
-              whileTap={{ scale: 0.9 }}
             >
-              {mobileOpen ? <CloseIcon /> : <MenuIcon />}
-            </motion.button>
+              Brew Room
+            </span>
+          </a>
+
+          {/* Desktop links */}
+          <nav
+            className="nav-desktop"
+            aria-label="Primary"
+            style={{
+              alignItems: 'center',
+              gap: 'clamp(18px, 2.4vw, 34px)',
+              marginLeft: 'auto',
+            }}
+          >
+            {NAV_LINKS.map((link) => (
+              <a key={link.href} className="nav-link" href={link.href}>
+                {link.label}
+              </a>
+            ))}
+          </nav>
+
+          {/* Right cluster */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              marginLeft: 'auto',
+            }}
+          >
+            <div className="nav-reserve-wrap">
+              <a
+                href="#reservation"
+                className="btn btn-primary"
+                style={{ padding: '13px 28px', minHeight: 44 }}
+              >
+                Reserve
+              </a>
+            </div>
+
+            <button
+              type="button"
+              className={`nav-iconbtn nav-burger ${menuOpen ? 'nav-burger--open' : ''}`}
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              aria-controls="nav-mobile-menu"
+            >
+              {/* three lines morph into a cross in place */}
+              <span className="nav-burger-lines" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+            </button>
           </div>
         </div>
-      </motion.nav>
+      </header>
 
-      {/* Mobile menu */}
+      {/* Mobile overlay menu */}
       <AnimatePresence>
-        {mobileOpen && (
+        {menuOpen && (
           <motion.div
+            id="nav-mobile-menu"
+            className="nav-overlay"
+            ref={overlayRef}
+            data-lenis-prevent
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.35, ease: EASE } }}
+            transition={{ duration: 0.5, ease: EASE }}
             style={{
               position: 'fixed',
               inset: 0,
-              zIndex: 99,
-              background: theme === 'dark' ? 'rgba(13,10,7,0.98)' : 'rgba(250,248,245,0.98)',
+              zIndex: 1090,
+              background: overlayBg,
               backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '40px',
+              overflowY: 'auto',
             }}
-            initial={{ opacity: 0, clipPath: 'circle(0% at calc(100% - 40px) 40px)' }}
-            animate={{ opacity: 1, clipPath: 'circle(150% at calc(100% - 40px) 40px)' }}
-            exit={{ opacity: 0, clipPath: 'circle(0% at calc(100% - 40px) 40px)' }}
-            transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
           >
-            {navLinks.map((link, i) => (
-              <motion.a
-                key={link.label}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontSize: 'clamp(32px, 8vw, 48px)',
-                  fontWeight: '400',
-                  color: 'var(--color-text-primary)',
-                  textDecoration: 'none',
-                }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ delay: 0.1 + i * 0.07 }}
-                whileHover={{ color: 'var(--color-accent)', x: 8 }}
-              >
-                {link.label}
-              </motion.a>
-            ))}
-            <motion.a
-              href="#contact"
-              onClick={() => setMobileOpen(false)}
+            <nav
+              aria-label="Mobile"
               style={{
-                background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-dark))',
-                color: '#fff',
-                textDecoration: 'none',
-                borderRadius: '4px',
-                padding: '14px 40px',
-                fontFamily: "'Inter', sans-serif",
-                fontSize: '14px',
-                fontWeight: '600',
-                letterSpacing: '2px',
-                textTransform: 'uppercase',
-                marginTop: '16px',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                gap: 'clamp(6px, 1.6vh, 16px)',
+                padding: '120px var(--gutter) 40px',
               }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45 }}
-              whileTap={{ scale: 0.97 }}
             >
-              Reserve a Table
-            </motion.a>
+              {NAV_LINKS.map((link, i) => (
+                <div
+                  key={link.href}
+                  style={{
+                    overflow: 'hidden',
+                    /* descender slack for display-serif tails (see ui.jsx Reveal) */
+                    padding: '0 0.14em 0.16em',
+                    margin: '0 -0.14em -0.16em',
+                  }}
+                >
+                  <motion.a
+                    href={link.href}
+                    className="nav-mlink"
+                    onClick={() => setMenuOpen(false)}
+                    initial={reduce ? { opacity: 0 } : { y: '110%' }}
+                    animate={reduce ? { opacity: 1 } : { y: 0 }}
+                    exit={
+                      reduce
+                        ? { opacity: 0, transition: { duration: 0.25 } }
+                        : { y: '110%', transition: { duration: 0.4, ease: EASE } }
+                    }
+                    transition={{
+                      duration: 0.85,
+                      delay: 0.12 + i * 0.07,
+                      ease: EASE,
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 20,
+                      textDecoration: 'none',
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 'clamp(36px, 9vw, 52px)',
+                      fontWeight: 400,
+                      letterSpacing: '-0.01em',
+                      lineHeight: 1.15,
+                      padding: '4px 0',
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        letterSpacing: '0.3em',
+                        color: 'var(--color-accent)',
+                        flex: 'none',
+                      }}
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    {link.label}
+                  </motion.a>
+                </div>
+              ))}
+            </nav>
+
+            <motion.div
+              className="nav-contact"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.25 } }}
+              transition={{ duration: 0.8, delay: 0.55, ease: EASE }}
+              style={{
+                borderTop: '1px solid var(--color-border)',
+                padding: '26px var(--gutter) 42px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <a
+                href={SITE.phoneHref}
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                  letterSpacing: '0.06em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: 44,
+                }}
+              >
+                {SITE.phone}
+              </a>
+              <p
+                style={{
+                  fontFamily: 'var(--font-accent)',
+                  fontSize: 16,
+                  lineHeight: 1.6,
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                {SITE.address}
+              </p>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .desktop-nav { display: none !important; }
-          .desktop-cta { display: none !important; }
-          .mobile-menu-btn { display: flex !important; }
-        }
-      `}</style>
     </>
   )
 }

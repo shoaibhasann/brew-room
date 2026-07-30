@@ -1,290 +1,236 @@
-import { useState, useRef } from 'react'
-import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { SectionHeader, EASE, fadeUp, ArrowRight } from './ui'
+import { SITE, MENU_CATEGORIES, MENU_ITEMS } from '../data/site'
 
-const categories = ['All', 'Coffee', 'Breakfast', 'Mains', 'Desserts']
-
-const menuItems = [
-  {
-    category: 'Coffee',
-    name: 'Signature Cold Brew',
-    desc: 'Single-origin beans, slow-steeped 18 hours. Served over artisan ice with a hint of vanilla.',
-    price: '₹320',
-    tag: 'Bestseller',
-    img: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&q=80&fit=crop',
-  },
-  {
-    category: 'Coffee',
-    name: 'Flat White',
-    desc: 'Double ristretto with velvety steamed micro-foam. Our most requested morning ritual.',
-    price: '₹280',
-    img: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400&q=80&fit=crop',
-  },
-  {
-    category: 'Coffee',
-    name: 'Salted Caramel Shake',
-    desc: 'Creamy blended espresso, house-made caramel, and a whisper of Himalayan salt.',
-    price: '₹380',
-    tag: 'Must Try',
-    img: 'https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=400&q=80&fit=crop',
-  },
-  {
-    category: 'Breakfast',
-    name: 'Eggs Benedict',
-    desc: 'Poached free-range eggs on toasted brioche, house hollandaise, crispy pancetta.',
-    price: '₹520',
-    tag: 'Chef\'s Pick',
-    img: 'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400&q=80&fit=crop',
-  },
-  {
-    category: 'Breakfast',
-    name: 'Garden Waffles',
-    desc: 'Belgian waffles with fresh berries, clotted cream, and house-made wildflower honey.',
-    price: '₹450',
-    img: 'https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=400&q=80&fit=crop',
-  },
-  {
-    category: 'Mains',
-    name: 'Penne Alfredo',
-    desc: 'Chicken penne in a rich parmesan cream, black pepper, and fresh herbs. Italian tradition.',
-    price: '₹620',
-    tag: 'Popular',
-    img: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&q=80&fit=crop',
-  },
-  {
-    category: 'Mains',
-    name: 'Caesar Salad',
-    desc: 'Crispy romaine, house-made dressing, parmesan, garlic croutons. A timeless classic.',
-    price: '₹480',
-    img: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=400&q=80&fit=crop',
-  },
-  {
-    category: 'Desserts',
-    name: 'Chocolate Cake',
-    desc: 'Old-fashioned dark chocolate cake with ganache and hand-whipped chantilly cream.',
-    price: '₹340',
-    tag: 'Bestseller',
-    img: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&q=80&fit=crop',
-  },
-]
+/* ─────────────────────────────────────────────────────────────
+   MENU — editorial menu grid with sliding-underline category
+   tabs, dotted-leader price rows, and quiet card hovers.
+   ───────────────────────────────────────────────────────────── */
 
 export default function Menu() {
   const [active, setActive] = useState('All')
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-80px' })
+  const reduce = useReducedMotion()
 
-  const filtered = active === 'All' ? menuItems : menuItems.filter(m => m.category === active)
+  const filtered =
+    active === 'All' ? MENU_ITEMS : MENU_ITEMS.filter((item) => item.category === active)
 
   return (
-    <section
-      id="menu"
-      ref={ref}
-      style={{
-        padding: 'clamp(80px, 12vw, 140px) 0',
-        background: 'var(--color-surface)',
-        borderTop: '1px solid var(--color-border)',
-        borderBottom: '1px solid var(--color-border)',
-      }}
-    >
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 clamp(20px, 5vw, 60px)' }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-          marginBottom: 'clamp(40px, 6vw, 70px)',
-        }}>
-          <motion.div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '20px',
-            }}
-            initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : {}}
-          >
-            <div style={{ width: '32px', height: '1px', background: 'var(--color-accent)' }} />
-            <span style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontSize: '12px',
-              letterSpacing: '5px',
-              color: 'var(--color-accent)',
-              textTransform: 'uppercase',
-            }}>Curated Selections</span>
-            <div style={{ width: '32px', height: '1px', background: 'var(--color-accent)' }} />
-          </motion.div>
+    <section id="menu" className="section-pad" style={{ background: 'var(--color-bg)' }}>
+      <style>{`
+        .menu-card {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          background: var(--color-card);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-card);
+          overflow: hidden;
+          transition: transform 0.35s var(--ease-lux),
+                      border-color 0.35s var(--ease-lux),
+                      background-color 0.35s var(--ease-lux),
+                      box-shadow 0.35s var(--ease-lux);
+        }
+        .menu-card:hover {
+          transform: translateY(-5px);
+          border-color: var(--color-accent-light);
+          background: var(--color-card-hover);
+          box-shadow: 0 24px 48px -18px rgba(36, 23, 8, 0.18);
+        }
+        .menu-card:hover .img-frame img {
+          transform: scale(1.05);
+        }
+        .menu-tab {
+          position: relative;
+          min-height: 44px;
+          padding: 10px 4px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: var(--font-body);
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: var(--color-text-secondary);
+          transition: color 0.3s var(--ease-lux);
+        }
+        .menu-tab:hover { color: var(--color-text-primary); }
+        .menu-tab[aria-pressed="true"] { color: var(--color-accent); }
+      `}</style>
 
-          <motion.h2
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: 'clamp(36px, 5vw, 60px)',
-              fontWeight: '400',
-              color: 'var(--color-text-primary)',
-              letterSpacing: '-1px',
-              lineHeight: 1.1,
-            }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.1 }}
-          >
-            Our Finest <em style={{ color: 'var(--color-accent)' }}>Offerings</em>
-          </motion.h2>
-        </div>
+      <div className="container-site">
+        <SectionHeader
+          index="03"
+          eyebrow="Curated Selections"
+          script="From our kitchen"
+          title="Our finest <em>offerings</em>"
+          align="center"
+        />
 
-        {/* Category filter */}
+        {/* Category tabs — sliding gold underline */}
         <motion.div
+          {...fadeUp(0.12, 24)}
           style={{
             display: 'flex',
-            gap: '8px',
-            justifyContent: 'center',
-            marginBottom: 'clamp(32px, 5vw, 56px)',
             flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: 'clamp(18px, 3vw, 32px)',
+            marginTop: 'clamp(44px, 6vw, 68px)',
+            marginBottom: 'clamp(40px, 5vw, 60px)',
           }}
-          initial={{ opacity: 0, y: 10 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.2 }}
         >
-          {categories.map(cat => (
-            <motion.button
+          {MENU_CATEGORIES.map((cat) => (
+            <button
               key={cat}
+              type="button"
+              className="menu-tab"
+              aria-pressed={active === cat}
               onClick={() => setActive(cat)}
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: '12px',
-                fontWeight: '600',
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-                padding: '10px 22px',
-                borderRadius: '50px',
-                cursor: 'pointer',
-                border: 'none',
-                background: active === cat
-                  ? 'linear-gradient(135deg, var(--color-accent), var(--color-accent-dark))'
-                  : 'var(--color-card)',
-                color: active === cat ? '#fff' : 'var(--color-text-secondary)',
-                transition: 'all 0.2s ease',
-              }}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
             >
               {cat}
-            </motion.button>
+              {active === cat && (
+                <motion.span
+                  layoutId="menu-tab-underline"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    left: 4,
+                    right: 4,
+                    bottom: 6,
+                    height: 1,
+                    background: 'var(--color-accent)',
+                  }}
+                  transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
+                />
+              )}
+            </button>
           ))}
         </motion.div>
 
-        {/* Menu grid */}
+        {/* Item grid */}
         <motion.div
-          layout
+          {...fadeUp(0.18, 30)}
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
-            gap: '20px',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+            gap: '22px',
           }}
         >
           <AnimatePresence mode="popLayout">
-            {filtered.map((item, i) => (
+            {filtered.map((item) => (
               <motion.div
                 key={item.name}
                 layout
-                initial={{ opacity: 0, scale: 0.92 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.88 }}
-                transition={{ duration: 0.35, delay: i * 0.06 }}
-                style={{
-                  background: 'var(--color-bg)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '14px',
-                  overflow: 'hidden',
-                  cursor: 'default',
-                }}
-                whileHover={{ y: -6, boxShadow: '0 24px 48px rgba(0,0,0,0.12)' }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.45, ease: EASE }}
               >
-                {/* Image */}
-                <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
-                  <motion.img
-                    src={item.img}
-                    alt={item.name}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                    }}
-                    whileHover={{ scale: 1.08 }}
-                    transition={{ duration: 0.5 }}
-                  />
-                  {item.tag && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '12px',
-                      left: '12px',
-                      background: 'var(--color-accent)',
-                      color: '#fff',
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: '10px',
-                      fontWeight: '700',
-                      letterSpacing: '1px',
-                      textTransform: 'uppercase',
-                      padding: '4px 10px',
-                      borderRadius: '50px',
-                    }}>
-                      {item.tag}
-                    </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div style={{ padding: '20px' }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '8px',
-                    gap: '8px',
-                  }}>
-                    <h3 style={{
-                      fontFamily: "'Playfair Display', serif",
-                      fontSize: '18px',
-                      fontWeight: '500',
-                      color: 'var(--color-text-primary)',
-                      lineHeight: 1.2,
-                    }}>{item.name}</h3>
-                    <span style={{
-                      fontFamily: "'Playfair Display', serif",
-                      fontSize: '18px',
-                      fontWeight: '400',
-                      color: 'var(--color-accent)',
-                      whiteSpace: 'nowrap',
-                    }}>{item.price}</span>
+                <article className="menu-card">
+                  <div className="img-frame" style={{ aspectRatio: '4 / 3' }}>
+                    <img src={item.img} alt={item.name} loading="lazy" />
+                    {item.tag && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: 14,
+                          left: 14,
+                          padding: '5px 12px',
+                          borderRadius: 999,
+                          background: 'var(--color-accent)',
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          letterSpacing: '0.18em',
+                          textTransform: 'uppercase',
+                          color: 'var(--color-on-accent)',
+                        }}
+                      >
+                        {item.tag}
+                      </span>
+                    )}
                   </div>
-                  <p style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: '15px',
-                    lineHeight: 1.6,
-                    color: 'var(--color-text-secondary)',
-                  }}>{item.desc}</p>
-                </div>
+
+                  <div style={{ padding: 22 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                      <h3
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: 19,
+                          fontWeight: 500,
+                          letterSpacing: '-0.01em',
+                          color: 'var(--color-text-primary)',
+                          lineHeight: 1.25,
+                        }}
+                      >
+                        {item.name}
+                      </h3>
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          flex: 1,
+                          margin: '0 10px',
+                          borderBottom: '1px dotted var(--color-border-strong)',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: 19,
+                          fontWeight: 400,
+                          color: 'var(--color-accent)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {item.price}
+                      </span>
+                    </div>
+                    <p
+                      style={{
+                        marginTop: 10,
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 13.5,
+                        lineHeight: 1.65,
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
+                      {item.desc}
+                    </p>
+                  </div>
+                </article>
               </motion.div>
             ))}
           </AnimatePresence>
         </motion.div>
 
-        {/* Footer note */}
-        <motion.p
+        {/* Footnote */}
+        <motion.div
+          {...fadeUp(0.1, 24)}
           style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
             textAlign: 'center',
-            fontFamily: "'Cormorant Garamond', serif",
-            fontStyle: 'italic',
-            fontSize: '15px',
-            color: 'var(--color-text-secondary)',
-            marginTop: '48px',
+            gap: 20,
+            marginTop: 'clamp(56px, 8vw, 88px)',
           }}
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ delay: 0.5 }}
         >
-          All prices are indicative. Full menu available at the cafe.
-        </motion.p>
+          <p
+            style={{
+              fontFamily: 'var(--font-accent)',
+              fontStyle: 'italic',
+              fontSize: 'clamp(16px, 1.8vw, 19px)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            All prices are indicative. Full menu available at the cafe.
+          </p>
+          <a className="link-arrow" href={SITE.phoneHref}>
+            Call for today&apos;s specials
+            <ArrowRight />
+          </a>
+        </motion.div>
       </div>
     </section>
   )

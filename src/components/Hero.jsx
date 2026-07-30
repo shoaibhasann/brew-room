@@ -1,321 +1,413 @@
 import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion'
+import { EASE, Stamp, ArrowRight } from './ui'
 
-// Premium coffee/cafe images from Unsplash (free to use)
-const heroImages = [
-  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1400&q=85&fit=crop',
-  'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1400&q=85&fit=crop',
-  'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1400&q=85&fit=crop',
-]
+/* ─────────────────────────────────────────────────────────────
+   HERO — "Product Theatre". Starbucks-poster energy in the
+   Roasted Paper language: massive solid + outline display type,
+   a floating Brew Room glass tilting through it, an espresso
+   circle bleeding off the right edge, drifting beans, stamp.
+   All entrances run on mount (`animate`) so the choreography
+   plays as the splash curtain lifts.
+   ───────────────────────────────────────────────────────────── */
 
-const StarIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--color-accent)" stroke="none">
-    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
-  </svg>
-)
+const GLASS_SRC = '/images/hero-glass.webp'
 
-const ArrowDown = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/>
-    <polyline points="19 12 12 19 5 12"/>
-  </svg>
-)
+/* Masked line rise — page-load variant of <Reveal> */
+function MaskedLine({ children, delay = 0, style }) {
+  const reduce = useReducedMotion()
+  return (
+    <span style={{ display: 'block', overflow: 'hidden' }}>
+      <motion.span
+        style={{
+          display: 'block',
+          /* slack for display-serif descenders/italic overhangs */
+          padding: '0 0.14em 0.16em',
+          margin: '0 -0.14em -0.16em',
+          ...style,
+        }}
+        initial={reduce ? { opacity: 0 } : { y: '110%' }}
+        animate={reduce ? { opacity: 1 } : { y: 0 }}
+        transition={{ duration: 1.1, delay, ease: EASE }}
+      >
+        {children}
+      </motion.span>
+    </span>
+  )
+}
 
-const LocationIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-    <circle cx="12" cy="10" r="3"/>
-  </svg>
-)
+/* Tiny coffee-bean SVG for the floating garnish.
+   tone 'ink' reads on cream paper; 'gold' reads on the dark circle. */
+const Bean = ({ size = 22, style, drift = 10, duration = 6, delay = 0, tone = 'ink' }) => {
+  const reduce = useReducedMotion()
+  const fill = tone === 'gold' ? 'var(--panel-gold)' : 'var(--panel-bg-2)'
+  const crease = tone === 'gold' ? 'var(--panel-bg)' : 'var(--color-bg)'
+  return (
+    <motion.svg
+      width={size}
+      height={size * 1.35}
+      viewBox="0 0 20 27"
+      aria-hidden="true"
+      style={{ position: 'absolute', ...style }}
+      initial={{ opacity: 0 }}
+      animate={
+        reduce
+          ? { opacity: 0.9 }
+          : { opacity: 0.9, y: [0, -drift, 0], rotate: [0, 8, 0] }
+      }
+      transition={
+        reduce
+          ? { duration: 0.5, delay }
+          : {
+              opacity: { duration: 0.8, delay, ease: EASE },
+              y: { duration, delay, repeat: Infinity, ease: 'easeInOut' },
+              rotate: { duration: duration * 1.2, delay, repeat: Infinity, ease: 'easeInOut' },
+            }
+      }
+    >
+      <ellipse cx="10" cy="13.5" rx="9" ry="13" fill={fill} />
+      <path
+        d="M10 1.5 C 6 8, 14 19, 10 25.5"
+        stroke={crease}
+        strokeWidth="1.6"
+        fill="none"
+        strokeLinecap="round"
+      />
+    </motion.svg>
+  )
+}
 
 export default function Hero() {
-  const containerRef = useRef(null)
+  const sectionRef = useRef(null)
+  const reduce = useReducedMotion()
+
+  /* Scroll choreography — the glass drifts up and tips further
+     over as the section scrolls away; the circle sinks slightly. */
   const { scrollYProgress } = useScroll({
-    target: containerRef,
+    target: sectionRef,
     offset: ['start start', 'end start'],
   })
-
-  const bgY = useTransform(scrollYProgress, [0, 1], ['0%', '30%'])
-  const textY = useTransform(scrollYProgress, [0, 1], ['0%', '20%'])
-  const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0])
+  const glassY = useTransform(scrollYProgress, [0, 1], ['0%', '-14%'])
+  const glassRotate = useTransform(scrollYProgress, [0, 1], [-7, 5])
+  const circleY = useTransform(scrollYProgress, [0, 1], ['0%', '12%'])
 
   return (
     <section
-      ref={containerRef}
       id="home"
+      ref={sectionRef}
+      className="hero-section"
       style={{
         position: 'relative',
-        height: '100vh',
-        minHeight: '700px',
         overflow: 'hidden',
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
         justifyContent: 'center',
+        background: 'var(--color-bg)',
+        paddingTop: 'clamp(110px, 15vh, 160px)',
+        paddingBottom: 'clamp(48px, 7vh, 88px)',
       }}
     >
-      {/* Parallax background image */}
+      <style>{`
+        .hero-section {
+          min-height: 100vh;
+          min-height: 100svh;
+        }
+        .hero-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: clamp(36px, 5vw, 72px);
+          align-items: center;
+        }
+        .hero-word--outline {
+          color: transparent;
+          -webkit-text-stroke: 1.5px var(--color-text-primary);
+          font-style: italic;
+        }
+        .hero-glass-wrap { position: relative; z-index: 3; }
+        @media (min-width: 1024px) {
+          .hero-grid { grid-template-columns: 1.1fr 0.9fr; }
+          /* the glass reaches back over the headline column */
+          .hero-glass-wrap { margin-left: clamp(-140px, -9vw, -60px); }
+        }
+        @media (max-width: 1023px) {
+          .hero-circle { display: none; }
+          .hero-glass-img { max-height: 52vh; }
+        }
+        /* the left crescent needs wide margins to stay clear of the
+           navbar wordmark — wide screens only */
+        @media (max-width: 1439px) {
+          .hero-circle-left { display: none; }
+        }
+        @media (max-width: 639px) {
+          .hero-stamp { display: none; }
+        }
+      `}</style>
+
+      {/* ── Espresso circle bleeding off the right edge ── */}
       <motion.div
+        aria-hidden="true"
+        className="hero-circle"
         style={{
           position: 'absolute',
-          inset: '-10%',
-          y: bgY,
+          top: '50%',
+          right: 'max(-52vh, -560px)',
+          width: 'min(118vh, 1240px)',
+          height: 'min(118vh, 1240px)',
+          marginTop: 'min(-59vh, -620px)',
+          borderRadius: '50%',
+          background: 'var(--panel-bg)',
+          y: reduce ? 0 : circleY,
+          zIndex: 1,
         }}
-      >
-        <img
-          src={heroImages[0]}
-          alt="The Brew Room cafe ambiance"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center',
-          }}
-          loading="eager"
-        />
-        {/* Layered overlays for depth */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(to bottom, rgba(13,10,7,0.5) 0%, rgba(13,10,7,0.3) 40%, rgba(13,10,7,0.7) 100%)',
-        }} />
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(13,10,7,0.6) 100%)',
-        }} />
-      </motion.div>
-
-      {/* Floating badge - top right */}
+        initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.86 }}
+        animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+        transition={{ duration: 1.3, delay: 0.2, ease: EASE }}
+      />
+      {/* Solid espresso crescent on the left edge — echoes the big
+          right circle. Sits below the navbar zone and pokes in at
+          most ~120px, clear of the headline column at ≥1440px. */}
       <motion.div
+        aria-hidden="true"
+        className="hero-circle hero-circle-left"
         style={{
           position: 'absolute',
-          top: '120px',
-          right: 'clamp(20px, 4vw, 60px)',
-          background: 'rgba(13,10,7,0.7)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(212,160,85,0.3)',
-          borderRadius: '12px',
-          padding: '14px 18px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '4px',
+          top: '110px',
+          left: '-360px',
+          width: '480px',
+          height: '480px',
+          borderRadius: '50%',
+          background: 'var(--panel-bg)',
+          zIndex: 0,
         }}
-        initial={{ opacity: 0, x: 40 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8, delay: 1.2 }}
-      >
-        <div style={{ display: 'flex', gap: '3px' }}>
-          {[...Array(5)].map((_, i) => <StarIcon key={i} />)}
-        </div>
-        <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: '600', color: '#f0e8d8' }}>4.4</span>
-        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: '#a89070', letterSpacing: '0.5px' }}>3,421 Reviews</span>
-        <div style={{ height: '1px', width: '100%', background: 'rgba(212,160,85,0.2)', margin: '4px 0' }} />
-        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: '#d4a055', letterSpacing: '1px', textTransform: 'uppercase' }}>#1 Afternoon Tea</span>
-      </motion.div>
+        initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.88 }}
+        animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+        transition={{ duration: 1.2, delay: 0.55, ease: EASE }}
+      />
 
-      {/* Main content */}
-      <motion.div
-        style={{
-          position: 'relative',
-          zIndex: 2,
-          textAlign: 'center',
-          padding: '0 clamp(20px, 5vw, 60px)',
-          maxWidth: '900px',
-          y: textY,
-          opacity,
-        }}
+      <div
+        className="container-site hero-grid"
+        style={{ position: 'relative', width: '100%', zIndex: 2 }}
       >
-        {/* Pre-heading */}
-        <motion.div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            marginBottom: '24px',
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.5 }}
-        >
-          <div style={{ height: '1px', width: '40px', background: 'var(--color-accent)' }} />
-          <span style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: '13px',
-            letterSpacing: '5px',
-            color: 'var(--color-accent)',
-            textTransform: 'uppercase',
-          }}>
-            Mylapore, Chennai
-          </span>
-          <div style={{ height: '1px', width: '40px', background: 'var(--color-accent)' }} />
-        </motion.div>
-
-        {/* Main heading */}
-        <div style={{ overflow: 'hidden' }}>
-          <motion.h1
+        {/* ══ LEFT — the poster type ══ */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <motion.span
+            className="script"
+            aria-hidden="true"
             style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: 'clamp(52px, 9vw, 100px)',
-              fontWeight: '400',
-              color: '#f0e8d8',
-              lineHeight: 0.92,
-              letterSpacing: '-2px',
-              marginBottom: '8px',
+              display: 'block',
+              fontSize: 'clamp(24px, 3vw, 34px)',
+              rotate: -2,
+              transformOrigin: 'left center',
+              width: 'fit-content',
             }}
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.9, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.15, ease: EASE }}
           >
-            Where Coffee
-          </motion.h1>
-        </div>
-        <div style={{ overflow: 'hidden' }}>
-          <motion.h1
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontStyle: 'italic',
-              fontSize: 'clamp(52px, 9vw, 100px)',
-              fontWeight: '400',
-              color: 'var(--color-accent)',
-              lineHeight: 0.92,
-              letterSpacing: '-2px',
-              marginBottom: '8px',
-            }}
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.9, delay: 0.75, ease: [0.25, 0.46, 0.45, 0.94] }}
-          >
-            Meets Soul
-          </motion.h1>
-        </div>
+            Good coffee, great company
+          </motion.span>
 
-        {/* Subheading */}
-        <motion.p
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 'clamp(16px, 2.5vw, 20px)',
-            color: 'rgba(240,232,216,0.75)',
-            maxWidth: '520px',
-            margin: '28px auto 0',
-            lineHeight: 1.7,
-            letterSpacing: '0.3px',
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 1 }}
-        >
-          A serene garden cafe nestled within The Savera Hotel. Artisan brews, European cuisine, and rustic-modern beauty — all under the Chennai sky.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          style={{
-            display: 'flex',
-            gap: '16px',
-            justifyContent: 'center',
-            marginTop: '44px',
-            flexWrap: 'wrap',
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 1.15 }}
-        >
-          <motion.a
-            href="#menu"
+          {/* COLD / BREW — solid line + italic outline line */}
+          <h1
             style={{
-              background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-dark))',
-              color: '#fff',
-              textDecoration: 'none',
-              borderRadius: '4px',
-              padding: '16px 36px',
-              fontFamily: "'Inter', sans-serif",
-              fontSize: '13px',
-              fontWeight: '600',
-              letterSpacing: '1.5px',
+              fontFamily: 'var(--font-display)',
+              fontOpticalSizing: 'auto',
+              fontWeight: 600,
               textTransform: 'uppercase',
+              fontSize: 'clamp(68px, 10.5vw, 168px)',
+              lineHeight: 0.92,
+              letterSpacing: '-0.015em',
+              color: 'var(--color-text-primary)',
+              margin: 'clamp(12px, 2vh, 22px) 0 0',
             }}
-            whileHover={{ scale: 1.04, boxShadow: '0 12px 32px rgba(212,160,85,0.5)' }}
-            whileTap={{ scale: 0.97 }}
           >
-            Explore Menu
-          </motion.a>
-          <motion.a
-            href="#about"
+            <MaskedLine delay={0.3}>Cold</MaskedLine>
+            <MaskedLine delay={0.42}>
+              <span className="hero-word--outline">Brew</span>
+            </MaskedLine>
+          </h1>
+
+          {/* Gold rule + price */}
+          <motion.div
             style={{
-              background: 'transparent',
-              color: '#f0e8d8',
-              textDecoration: 'none',
-              borderRadius: '4px',
-              padding: '16px 36px',
-              fontFamily: "'Inter', sans-serif",
-              fontSize: '13px',
-              fontWeight: '500',
-              letterSpacing: '1.5px',
-              textTransform: 'uppercase',
-              border: '1px solid rgba(240,232,216,0.3)',
-              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 22,
+              marginTop: 'clamp(18px, 3vh, 30px)',
             }}
-            whileHover={{ scale: 1.04, borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }}
-            whileTap={{ scale: 0.97 }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 18 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.6, ease: EASE }}
           >
-            Our Story
-          </motion.a>
-        </motion.div>
+            <span
+              aria-hidden="true"
+              style={{
+                width: 64,
+                height: 2,
+                background: 'var(--color-accent-light)',
+                alignSelf: 'center',
+              }}
+            />
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(26px, 3vw, 38px)',
+                fontWeight: 500,
+                color: 'var(--color-accent)',
+              }}
+            >
+              ₹320
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.28em',
+                textTransform: 'uppercase',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              Signature Serve
+            </span>
+          </motion.div>
 
-        {/* Location pill */}
-        <motion.div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            marginTop: '40px',
-            background: 'rgba(13,10,7,0.5)',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(240,232,216,0.1)',
-            borderRadius: '50px',
-            padding: '8px 16px',
-            color: 'rgba(240,232,216,0.6)',
-            fontFamily: "'Inter', sans-serif",
-            fontSize: '12px',
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.3 }}
-        >
-          <LocationIcon />
-          146, Dr Radha Krishnan Salai, Mylapore, Chennai 600004
-        </motion.div>
-      </motion.div>
+          <motion.p
+            className="prose-accent"
+            style={{
+              maxWidth: 420,
+              marginTop: 'clamp(16px, 2.4vh, 24px)',
+            }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 18 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.72, ease: EASE }}
+          >
+            Single-origin beans, steeped for eighteen unhurried hours and
+            poured over hand-cut ice beneath the garden canopy. One glass,
+            and the city slows down.
+          </motion.p>
 
-      {/* Scroll indicator */}
-      <motion.div
-        style={{
-          position: 'absolute',
-          bottom: '40px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '8px',
-          color: 'rgba(240,232,216,0.5)',
-          cursor: 'pointer',
-        }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.8 }}
-        onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
-      >
-        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', letterSpacing: '3px', textTransform: 'uppercase' }}>Scroll</span>
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <ArrowDown />
-        </motion.div>
-      </motion.div>
+          {/* CTA row */}
+          <motion.div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 18,
+              marginTop: 'clamp(26px, 4vh, 40px)',
+            }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 18 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.84, ease: EASE }}
+          >
+            <a className="btn btn-primary" href="#menu">
+              Explore the Menu
+              <ArrowRight size={15} />
+            </a>
+          </motion.div>
+
+          {/* Craft details — quiet product facts, no social proof */}
+          <motion.div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '10px 16px',
+              marginTop: 34,
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.9, delay: 1, ease: EASE }}
+          >
+            {['Single Origin', 'Steeped 18 Hours', 'Served in the Garden'].map(
+              (detail, i) => (
+                <span
+                  key={detail}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 16 }}
+                >
+                  {i > 0 && (
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: 4,
+                        height: 4,
+                        borderRadius: '50%',
+                        background: 'var(--color-accent-light)',
+                      }}
+                    />
+                  )}
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: '0.22em',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-text-secondary)',
+                    }}
+                  >
+                    {detail}
+                  </span>
+                </span>
+              )
+            )}
+          </motion.div>
+        </div>
+
+        {/* ══ RIGHT — the glass ══ */}
+        <div className="hero-glass-wrap">
+          {/* scroll-driven layer */}
+          <motion.div style={{ y: reduce ? 0 : glassY, rotate: reduce ? 0 : glassRotate }}>
+            {/* idle float layer */}
+            <motion.div
+              animate={reduce ? undefined : { y: [0, -12, 0] }}
+              transition={{ duration: 6.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              {/* entrance layer */}
+              <motion.img
+                src={GLASS_SRC}
+                alt="The Brew Room signature cold brew — a tall glass of slow-steeped espresso over ice"
+                className="hero-glass-img"
+                initial={
+                  reduce ? { opacity: 0 } : { opacity: 0, y: 90, scale: 0.94, rotate: 4 }
+                }
+                animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, rotate: 0 }}
+                transition={{ duration: 1.4, delay: 0.5, ease: EASE }}
+                style={{
+                  display: 'block',
+                  width: 'min(100%, 460px)',
+                  maxHeight: '68vh',
+                  objectFit: 'contain',
+                  margin: '0 auto',
+                  filter: 'drop-shadow(0 60px 70px rgba(24, 14, 5, 0.45))',
+                }}
+              />
+            </motion.div>
+          </motion.div>
+
+          {/* Stamp badge tucked against the glass */}
+          <motion.div
+            className="hero-stamp"
+            aria-hidden="true"
+            style={{ position: 'absolute', bottom: '4%', left: '-2%', zIndex: 4 }}
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.9, delay: 1.15, ease: EASE }}
+          >
+            <Stamp
+              text="SIGNATURE COLD BREW • SLOW-STEEPED 18 HOURS • "
+              size={116}
+              duration={20}
+            />
+          </motion.div>
+
+          {/* Floating beans around the glass */}
+          <Bean size={20} style={{ top: '9%', left: '4%' }} drift={12} duration={5.8} delay={1.2} />
+          <Bean size={14} tone="gold" style={{ top: '24%', right: '6%' }} drift={9} duration={7} delay={1.45} />
+          <Bean size={17} tone="gold" style={{ bottom: '14%', right: '13%' }} drift={11} duration={6.2} delay={1.7} />
+        </div>
+      </div>
+
     </section>
   )
 }

@@ -1,30 +1,55 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────
+   THE BREW ROOM — Design System v2
+   "Roasted Paper" — warm cream paper, espresso ink, burnished
+   gold, deep roasted panels for contrast. Single theme.
+   ───────────────────────────────────────────────────────────── */
+
 @layer base {
   :root {
-    --color-bg: #faf8f5;
-    --color-surface: #ffffff;
-    --color-text-primary: #1a1008;
-    --color-text-secondary: #6b5e4e;
-    --color-accent: #c8943a;
-    --color-accent-light: #e8b96a;
-    --color-accent-dark: #9a6e25;
-    --color-border: #e8e0d4;
-    --color-card: #f5f0e8;
-    color-scheme: light;
-  }
+    /* Paper (light) surfaces */
+    --color-bg: #f6f0e4;
+    --color-surface: #eee5d1;
+    --color-card: #fffbf2;
+    --color-card-hover: #fff6e4;
+    --color-text-primary: #241708;
+    --color-text-secondary: #6d5b42;
+    --color-accent: #875c20;        /* AA on every paper surface */
+    --color-accent-light: #c8963f;  /* decorative gold — rules, borders, large type */
+    --color-accent-dark: #6b4718;
+    --color-on-accent: #fff8ea;     /* ink on accent-filled surfaces */
+    --color-accent-hover: #6b4718;
+    --color-border: #e3d6bc;
+    --color-border-strong: #cbb992;
 
-  [data-theme="dark"] {
-    --color-bg: #0d0a07;
-    --color-surface: #171109;
-    --color-text-primary: #f0e8d8;
-    --color-text-secondary: #a89070;
-    --color-accent: #d4a055;
-    --color-accent-light: #e8c080;
-    --color-accent-dark: #b07830;
-    --color-border: #2a1f12;
-    --color-card: #1e160c;
-    color-scheme: dark;
+    /* Roasted panels (dark contrast blocks: Ticker, Signatures,
+       Experience, Footer) */
+    --panel-bg: #211307;
+    --panel-bg-2: #2b1a0b;
+    --panel-text: #f2e7d3;
+    --panel-text-soft: #bfa985;
+    --panel-gold: #d0a75c;
+    --panel-border: rgba(242, 231, 211, 0.14);
+
+    color-scheme: light;
+
+    /* Typography — Fraunces (variable, optical sizing) carries both
+       display and serif-prose roles; Manrope is the modern grotesque
+       for UI and body copy. */
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Manrope', system-ui, sans-serif;
+    --font-accent: 'Fraunces', Georgia, serif;
+    --font-script: 'Kaushan Script', cursive;
+
+    /* Motion */
+    --ease-lux: cubic-bezier(0.22, 1, 0.36, 1);
+
+    /* Layout */
+    --container-max: 1280px;
+    --gutter: clamp(20px, 5vw, 64px);
+    --section-pad: clamp(96px, 14vw, 168px);
+    --radius-card: 10px;
   }
 }
 
@@ -34,36 +59,302 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* No CSS smooth-scroll: Lenis owns anchor scrolling (its handler does
+   not preventDefault, so a CSS rule here would race it on every click).
+   Reduced-motion users get the browser's instant jumps. */
 
 body {
   background-color: var(--color-bg);
   color: var(--color-text-primary);
-  font-family: 'Inter', sans-serif;
-  transition: background-color 0.4s ease, color 0.4s ease;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-body.splash-active {
+body.splash-active,
+body.menu-open,
+body.lightbox-open {
   overflow: hidden;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--color-bg);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-accent);
-  border-radius: 3px;
+img {
+  max-width: 100%;
+  display: block;
 }
 
-/* Selection color */
+/* ── Paper grain over everything, very faint ────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Scrollbar / selection ──────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--color-bg); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent-light); }
+
 ::selection {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
+}
+
+/* ── Focus states ───────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SHARED VOCABULARY
+   ───────────────────────────────────────────────────────────── */
+
+.container-site {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
+
+.section-pad {
+  padding-top: var(--section-pad);
+  padding-bottom: var(--section-pad);
+}
+
+/* Dark roasted panel section — flips the shared vocabulary so
+   SectionHeader/eyebrow/prose read correctly on espresso */
+.panel-dark {
+  background: var(--panel-bg);
+  color: var(--panel-text);
+  --color-text-primary: var(--panel-text);
+  --color-text-secondary: var(--panel-text-soft);
+  --color-accent: var(--panel-gold);
+  --color-border: var(--panel-border);
+  --color-border-strong: rgba(242, 231, 211, 0.28);
+}
+
+/* Editorial eyebrow: "01 — Our Story" */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.eyebrow::before {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 1px;
+  background: var(--color-accent);
+  opacity: 0.7;
+}
+.eyebrow--center::after {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 1px;
+  background: var(--color-accent);
+  opacity: 0.7;
+}
+
+/* Hand-brushed script accent (use sparingly — one per section max) */
+.script {
+  font-family: var(--font-script);
+  font-weight: 400;
+  color: var(--color-accent-light);
+  letter-spacing: 0.01em;
+}
+
+/* Display headings — Fraunces interpolates its optical size axis
+   automatically; 450 weight keeps large sizes sturdy but refined */
+.display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+  line-height: 1.04;
+  color: var(--color-text-primary);
+}
+.display em {
+  font-style: italic;
+  color: var(--color-accent);
+}
+
+/* Long-form serif body copy — Fraunces runs a larger x-height than
+   the old Cormorant, so sizes come down a step */
+.prose-accent {
+  font-family: var(--font-accent);
+  font-optical-sizing: auto;
+  font-size: clamp(15.5px, 1.8vw, 18px);
+  font-weight: 350;
+  line-height: 1.8;
+  color: var(--color-text-secondary);
+}
+
+/* ── Buttons — skewed fill-sweep hover ──────────────────────── */
+.btn {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 17px 38px;
+  min-height: 52px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: color 0.35s var(--ease-lux), border-color 0.35s var(--ease-lux),
+              box-shadow 0.45s var(--ease-lux);
+}
+/* the slanted layer that wipes across on hover */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: -14%;
+  width: 128%;
+  z-index: -1;
+  background: var(--btn-sweep, var(--color-accent));
+  transform: translateX(-114%) skewX(-16deg);
+  transition: transform 0.5s var(--ease-lux);
+}
+.btn:hover::before,
+.btn:focus-visible::before {
+  transform: translateX(0) skewX(-16deg);
+}
+
+.btn-primary {
+  --btn-sweep: var(--color-accent-hover);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+.btn-primary:hover {
+  box-shadow: 0 16px 40px -12px rgba(135, 92, 32, 0.45);
+}
+
+.btn-ghost {
+  --btn-sweep: var(--color-accent);
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+.btn-ghost:hover,
+.btn-ghost:focus-visible {
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* On-image ghost button (photos are dark — always cream ink) */
+.btn-ghost--onimage {
+  --btn-sweep: var(--panel-gold);
+  color: #f2e7d3;
+  border-color: rgba(242, 231, 211, 0.35);
+  backdrop-filter: blur(8px);
+}
+.btn-ghost--onimage:hover,
+.btn-ghost--onimage:focus-visible {
+  border-color: var(--panel-gold);
+  color: #211307;
+}
+
+/* Inline arrow link */
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px; /* comfortable touch target at every call site */
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+.link-arrow svg { transition: transform 0.3s var(--ease-lux); }
+.link-arrow:hover svg { transform: translateX(6px); }
+
+/* ── Glass card (on-photo panels — photos are dark) ─────────── */
+.glass-panel {
+  background: rgba(24, 14, 5, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(208, 167, 92, 0.28);
+  color: #f2e7d3;
+}
+
+/* ── Image treatments ───────────────────────────────────────── */
+.img-frame {
+  position: relative;
+  overflow: hidden;
+}
+.img-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.1s var(--ease-lux);
+}
+.img-frame:hover img { transform: scale(1.05); }
+
+/* Arch frame — signature "garden window" shape */
+.arch {
+  border-radius: 999px 999px var(--radius-card) var(--radius-card);
+  overflow: hidden;
+}
+
+/* ── Marquee ticker ─────────────────────────────────────────── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 32s linear infinite;
+}
+.marquee-track:hover { animation-play-state: paused; }
+
+/* ── Slow Ken Burns ─────────────────────────────────────────── */
+@keyframes kenburns {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+.kenburns {
+  animation: kenburns 18s var(--ease-lux) forwards;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,238 +1,347 @@
 import { motion } from 'framer-motion'
+import { SITE, NAV_LINKS, HOURS } from '../data/site'
+import {
+  Reveal,
+  fadeUp,
+  fadeIn,
+  ArrowRight,
+  Instagram,
+  Facebook,
+} from './ui'
 
-const InstagramIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-  </svg>
-)
+/* ─────────────────────────────────────────────────────────────
+   FOOTER — grand editorial closing statement.
+   Fourth roasted-espresso panel: giant cream wordmark, hand-script
+   tagline, four quiet columns, hairline bottom bar.
+   ───────────────────────────────────────────────────────────── */
 
-const FacebookIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-  </svg>
-)
+const COLUMN_HEADING = {
+  fontFamily: 'var(--font-body)',
+  fontSize: '11px',
+  fontWeight: 700,
+  letterSpacing: '0.3em',
+  textTransform: 'uppercase',
+  color: 'var(--panel-text-soft)',
+  marginBottom: '26px',
+}
 
-const TwitterIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
-  </svg>
-)
+const SOCIALS = [
+  { label: 'Follow The Brew Room on Instagram', href: SITE.instagram, Icon: Instagram },
+  { label: 'Follow The Brew Room on Facebook', href: SITE.facebook, Icon: Facebook },
+]
 
 export default function Footer() {
+  /* "146, Dr Radha Krishnan Salai" / "Mylapore, Chennai 600004" */
+  const addressParts = SITE.address.split(', ')
+  const addressLines = [
+    addressParts.slice(0, 2).join(', '),
+    addressParts.slice(2).join(', '),
+  ]
+
   return (
-    <footer style={{
-      background: 'var(--color-bg)',
-      borderTop: '1px solid var(--color-border)',
-      padding: 'clamp(48px, 7vw, 80px) clamp(20px, 5vw, 60px) clamp(28px, 4vw, 40px)',
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Top row */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
-          gap: 'clamp(36px, 5vw, 60px)',
-          marginBottom: 'clamp(40px, 6vw, 60px)',
-          paddingBottom: 'clamp(40px, 6vw, 60px)',
-          borderBottom: '1px solid var(--color-border)',
-        }}>
-          {/* Brand */}
-          <div style={{ gridColumn: 'span 1' }}>
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{
-                fontFamily: "'Cormorant Garamond', serif",
-                fontSize: '11px',
-                letterSpacing: '4px',
-                color: 'var(--color-accent)',
-                textTransform: 'uppercase',
-                marginBottom: '4px',
-              }}>The</div>
-              <div style={{
-                fontFamily: "'Playfair Display', serif",
-                fontSize: '28px',
-                fontWeight: '400',
-                color: 'var(--color-text-primary)',
-                letterSpacing: '-0.5px',
-                lineHeight: 1,
-              }}>Brew Room</div>
-            </div>
-            <p style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontStyle: 'italic',
-              fontSize: '16px',
-              lineHeight: 1.7,
-              color: 'var(--color-text-secondary)',
-              marginBottom: '24px',
-            }}>
-              Where every sip tells a story. Garden cafe nestled within The Savera Hotel, Mylapore.
+    <footer className="panel-dark" style={{ background: 'var(--panel-bg)' }}>
+      <style>{`
+        .ftr-social {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: 1px solid var(--panel-border);
+          color: var(--panel-text-soft);
+          cursor: pointer;
+          transition: border-color 0.3s var(--ease-lux), color 0.3s var(--ease-lux);
+        }
+        .ftr-social:hover {
+          border-color: var(--panel-gold);
+          color: var(--panel-gold);
+        }
+        .ftr-navlink {
+          display: inline-block;
+          font-family: var(--font-accent);
+          font-size: 17px;
+          color: var(--panel-text-soft);
+          text-decoration: none;
+          cursor: pointer;
+          transition: color 0.3s var(--ease-lux), transform 0.3s var(--ease-lux);
+        }
+        .ftr-navlink:hover {
+          color: var(--panel-gold);
+          transform: translateX(4px);
+        }
+        .ftr-phone {
+          font-family: var(--font-display);
+          font-size: 18px;
+          color: var(--panel-gold);
+          text-decoration: none;
+          cursor: pointer;
+          transition: color 0.3s var(--ease-lux);
+        }
+        .ftr-phone:hover {
+          color: var(--panel-text);
+        }
+        .ftr-ghost {
+          --btn-sweep: var(--panel-gold);
+          background: transparent;
+          color: var(--panel-text);
+          border-color: rgba(242, 231, 211, 0.3);
+        }
+        .ftr-ghost:hover,
+        .ftr-ghost:focus-visible {
+          border-color: var(--panel-gold);
+          color: var(--panel-bg);
+        }
+        .ftr-credit {
+          color: var(--panel-gold);
+          font-weight: 600;
+          text-decoration: none;
+          border-bottom: 1px solid rgba(208, 167, 92, 0.35);
+          padding-bottom: 1px;
+          transition: color 0.3s var(--ease-lux), border-color 0.3s var(--ease-lux);
+        }
+        .ftr-credit:hover {
+          color: var(--panel-text);
+          border-color: var(--panel-text);
+        }
+      `}</style>
+
+      {/* ── Top block — ceremonial wordmark ─────────────────── */}
+      <div
+        className="container-site"
+        style={{
+          paddingTop: 'clamp(96px, 12vw, 160px)',
+          paddingBottom: 'clamp(64px, 8vw, 104px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+        }}
+      >
+        <motion.span
+          {...fadeIn(0)}
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '11px',
+            fontWeight: 600,
+            letterSpacing: '0.55em',
+            textTransform: 'uppercase',
+            color: 'var(--panel-gold)',
+            marginBottom: '18px',
+          }}
+        >
+          The
+        </motion.span>
+
+        <Reveal delay={0.06}>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 400,
+              fontSize: 'clamp(64px, 12vw, 150px)',
+              lineHeight: 0.9,
+              letterSpacing: '-0.03em',
+              color: 'var(--panel-text)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Brew Room
+          </h2>
+        </Reveal>
+
+        <motion.p
+          className="script"
+          {...fadeUp(0.18, 24)}
+          style={{
+            fontSize: 'clamp(20px, 2.4vw, 26px)',
+            color: 'var(--panel-gold)',
+            marginTop: '28px',
+            /* rotate as a motion value so it composes with fadeUp's y */
+            rotate: -2,
+          }}
+        >
+          {SITE.tagline}
+        </motion.p>
+
+        <motion.div
+          {...fadeUp(0.28, 24)}
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '20px 36px',
+            marginTop: '44px',
+          }}
+        >
+          <a className="btn ftr-ghost" href="#reservation">
+            Reserve a Table
+          </a>
+          {/* .link-arrow reads --color-accent, remapped to panel gold here */}
+          <a className="link-arrow" href={SITE.phoneHref}>
+            {SITE.phone}
+            <ArrowRight size={14} />
+          </a>
+        </motion.div>
+      </div>
+
+      {/* ── Middle — four editorial columns ─────────────────── */}
+      <div className="container-site" style={{ paddingBottom: 'clamp(64px, 8vw, 96px)' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 'clamp(44px, 5vw, 64px)',
+            borderTop: '1px solid var(--panel-border)',
+            paddingTop: 'clamp(56px, 6vw, 80px)',
+          }}
+        >
+          {/* Brand blurb + socials */}
+          <motion.div {...fadeUp(0)}>
+            <p
+              style={{
+                fontFamily: 'var(--font-accent)',
+                fontStyle: 'italic',
+                fontSize: '16px',
+                lineHeight: 1.8,
+                color: 'var(--panel-text-soft)',
+                maxWidth: '260px',
+              }}
+            >
+              Garden cafe nestled within The Savera Hotel, Mylapore.
             </p>
-            {/* Social links */}
-            <div style={{ display: 'flex', gap: '12px' }}>
-              {[
-                { icon: <InstagramIcon />, href: 'https://www.instagram.com/brewroomcoffee', label: 'Instagram' },
-                { icon: <FacebookIcon />, href: 'https://www.facebook.com/brewroomcoffee', label: 'Facebook' },
-                { icon: <TwitterIcon />, href: '#', label: 'Twitter' },
-              ].map(social => (
-                <motion.a
-                  key={social.label}
-                  href={social.href}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '28px' }}>
+              {SOCIALS.map(({ label, href, Icon }) => (
+                <a
+                  key={label}
+                  className="ftr-social"
+                  href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={social.label}
-                  style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '50%',
-                    border: '1px solid var(--color-border)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--color-text-secondary)',
-                    textDecoration: 'none',
-                  }}
-                  whileHover={{
-                    scale: 1.1,
-                    borderColor: 'var(--color-accent)',
-                    color: 'var(--color-accent)',
-                  }}
-                  whileTap={{ scale: 0.95 }}
+                  aria-label={label}
                 >
-                  {social.icon}
-                </motion.a>
+                  <Icon size={17} />
+                </a>
               ))}
             </div>
-          </div>
+          </motion.div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: '11px',
-              fontWeight: '700',
-              letterSpacing: '3px',
-              textTransform: 'uppercase',
-              color: 'var(--color-text-secondary)',
-              marginBottom: '20px',
-            }}>Explore</h4>
-            {['About', 'Menu', 'Gallery', 'Experience', 'Contact'].map(link => (
-              <motion.a
-                key={link}
-                href={`#${link.toLowerCase()}`}
-                style={{
-                  display: 'block',
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: '17px',
-                  color: 'var(--color-text-secondary)',
-                  textDecoration: 'none',
-                  marginBottom: '10px',
-                }}
-                whileHover={{ color: 'var(--color-accent)', x: 4 }}
-              >
-                {link}
-              </motion.a>
-            ))}
-          </div>
+          {/* Explore */}
+          <motion.nav {...fadeUp(0.08)} aria-label="Footer navigation">
+            <h3 style={COLUMN_HEADING}>Explore</h3>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {NAV_LINKS.map((link) => (
+                <li key={link.href}>
+                  <a className="ftr-navlink" href={link.href}>
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </motion.nav>
 
           {/* Hours */}
-          <div>
-            <h4 style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: '11px',
-              fontWeight: '700',
-              letterSpacing: '3px',
-              textTransform: 'uppercase',
-              color: 'var(--color-text-secondary)',
-              marginBottom: '20px',
-            }}>Hours</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                { day: 'Mon – Fri', time: '10:00 AM – 11:00 PM' },
-                { day: 'Saturday', time: '8:00 AM – 11:00 PM' },
-                { day: 'Sunday', time: '8:00 AM – 11:00 PM' },
-              ].map(h => (
-                <div key={h.day}>
-                  <div style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: 'var(--color-text-primary)',
-                  }}>{h.day}</div>
-                  <div style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: '15px',
-                    color: 'var(--color-text-secondary)',
-                  }}>{h.time}</div>
-                </div>
+          <motion.div {...fadeUp(0.16)}>
+            <h3 style={COLUMN_HEADING}>Hours</h3>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {HOURS.map((row) => (
+                <li key={row.day}>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      letterSpacing: '0.18em',
+                      textTransform: 'uppercase',
+                      color: 'var(--panel-text-soft)',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    {row.day}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-accent)',
+                      fontSize: '17px',
+                      color: 'var(--panel-text)',
+                    }}
+                  >
+                    {row.time}
+                  </span>
+                </li>
               ))}
-            </div>
-          </div>
+            </ul>
+          </motion.div>
 
           {/* Contact */}
-          <div>
-            <h4 style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: '11px',
-              fontWeight: '700',
-              letterSpacing: '3px',
-              textTransform: 'uppercase',
-              color: 'var(--color-text-secondary)',
-              marginBottom: '20px',
-            }}>Contact</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <div style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: '16px',
-                  color: 'var(--color-text-secondary)',
-                  lineHeight: 1.6,
-                }}>146, Dr Radha Krishnan Salai,<br />Mylapore, Chennai 600004</div>
-              </div>
-              <motion.a
-                href="tel:+919710947380"
-                style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontSize: '18px',
-                  color: 'var(--color-accent)',
-                  textDecoration: 'none',
-                }}
-                whileHover={{ letterSpacing: '0.5px' }}
-              >
-                +91 97109 47380
-              </motion.a>
-            </div>
-          </div>
+          <motion.div {...fadeUp(0.24)}>
+            <h3 style={COLUMN_HEADING}>Contact</h3>
+            <p
+              style={{
+                fontFamily: 'var(--font-accent)',
+                fontSize: '17px',
+                lineHeight: 1.7,
+                color: 'var(--panel-text-soft)',
+              }}
+            >
+              {addressLines[0]},
+              <br />
+              {addressLines[1]}
+            </p>
+            <a
+              className="ftr-phone"
+              href={SITE.phoneHref}
+              style={{ display: 'inline-block', marginTop: '18px' }}
+            >
+              {SITE.phone}
+            </a>
+          </motion.div>
         </div>
+      </div>
 
-        {/* Bottom row */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '16px',
-        }}>
-          <p style={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: '12px',
-            color: 'var(--color-text-secondary)',
-            letterSpacing: '0.3px',
-          }}>
-            © {new Date().getFullYear()} The Brew Room, Chennai. All rights reserved.
-          </p>
-          <div style={{
+      {/* ── Bottom bar — centered ───────────────────────────── */}
+      <div className="container-site">
+        <motion.div
+          {...fadeIn(0)}
+          style={{
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
-            fontFamily: "'Cormorant Garamond', serif",
-            fontStyle: 'italic',
-            fontSize: '13px',
-            color: 'var(--color-text-secondary)',
-          }}>
-            <span style={{ color: 'var(--color-accent)' }}>☕</span>
-            Crafted with love in Chennai
-          </div>
-        </div>
+            textAlign: 'center',
+            gap: '10px',
+            borderTop: '1px solid var(--panel-border)',
+            padding: '30px 0 34px',
+          }}
+        >
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '12px',
+              color: 'var(--panel-text-soft)',
+            }}
+          >
+            &copy; {new Date().getFullYear()} The Brew Room, Chennai. All rights reserved.
+          </p>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '12px',
+              letterSpacing: '0.04em',
+              color: 'var(--panel-text-soft)',
+            }}
+          >
+            Designed &amp; Developed by{' '}
+            <a
+              className="ftr-credit"
+              href="https://iamshoaib.tech"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Shoaib
+            </a>
+          </p>
+        </motion.div>
       </div>
     </footer>
   )

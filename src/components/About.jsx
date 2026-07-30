@@ -1,320 +1,320 @@
 import { useRef } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion'
+import { SectionHeader, fadeUp, fadeIn, ArrowRight, CoffeeCup, Leaf, Cutlery } from './ui'
+import { STATS } from '../data/site'
+import { IMAGES } from '../data/images'
 
-const stats = [
-  { value: '4.4★', label: 'Google Rating', sub: '3,421 reviews' },
-  { value: '#1', label: 'Afternoon Tea', sub: 'In Chennai' },
-  { value: '14+', label: 'Years', sub: 'Of excellence' },
-  { value: '∞', label: 'Memories', sub: 'Created daily' },
-]
+/* ─────────────────────────────────────────────────────────────
+   ABOUT — "Our Story"
+   Asymmetric editorial split on warm paper: long-form serif copy
+   on the left, a layered parallax composition on the right — the
+   garden shot in an arch "garden window" frame — followed by a
+   hairline-divided stats band and a trio of paper feature cards.
+   ───────────────────────────────────────────────────────────── */
 
-const features = [
+const FEATURES = [
   {
-    icon: '☕',
+    icon: CoffeeCup,
     title: 'Artisan Coffee',
     desc: 'Meticulously brewed cappuccinos, flat whites, cold brews and espresso blends — every cup a masterpiece.',
   },
   {
-    icon: '🌿',
+    icon: Leaf,
     title: 'Garden Setting',
     desc: 'Serene outdoor seating under gazebos, surrounded by lush hotel gardens. A true urban escape.',
   },
   {
-    icon: '🍽️',
+    icon: Cutlery,
     title: 'European Cuisine',
     desc: 'All-day breakfast, Italian and Mexican specialties, fresh bakes and indulgent desserts.',
   },
 ]
 
 export default function About() {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-80px' })
+  const visualRef = useRef(null)
+  const reduce = useReducedMotion()
+
+  /* Slow parallax drift across the layered composition */
+  const { scrollYProgress } = useScroll({
+    target: visualRef,
+    offset: ['start end', 'end start'],
+  })
+  const gardenY = useTransform(scrollYProgress, [0, 1], [48, -48])
+  const baristaY = useTransform(scrollYProgress, [0, 1], [-18, 36])
+  const cardY = useTransform(scrollYProgress, [0, 1], [10, -26])
 
   return (
-    <section
-      id="about"
-      ref={ref}
-      style={{
-        padding: 'clamp(80px, 12vw, 140px) clamp(20px, 5vw, 60px)',
-        maxWidth: '1200px',
-        margin: '0 auto',
-      }}
-    >
-      {/* Section label */}
-      <motion.div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '60px',
-        }}
-        initial={{ opacity: 0, x: -20 }}
-        animate={isInView ? { opacity: 1, x: 0 } : {}}
-        transition={{ duration: 0.6 }}
-      >
-        <div style={{ width: '32px', height: '1px', background: 'var(--color-accent)' }} />
-        <span style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontSize: '12px',
-          letterSpacing: '5px',
-          color: 'var(--color-accent)',
-          textTransform: 'uppercase',
-        }}>Our Story</span>
-      </motion.div>
+    <section id="about" className="section-pad" style={{ background: 'var(--color-bg)' }}>
+      <style>{`
+        .about-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: clamp(56px, 8vw, 104px);
+          align-items: start;
+        }
+        @media (min-width: 980px) {
+          .about-grid {
+            grid-template-columns: 0.92fr 1.08fr;
+          }
+          /* text opens level with the arch's shoulder, not the grid center */
+          .about-copy { padding-top: clamp(16px, 4vw, 56px); }
+        }
 
-      {/* Two column layout */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 460px), 1fr))',
-        gap: 'clamp(40px, 6vw, 80px)',
-        alignItems: 'center',
-        marginBottom: 'clamp(60px, 10vw, 100px)',
-      }}>
-        {/* Left — text */}
-        <div>
-          <motion.h2
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: 'clamp(36px, 5vw, 56px)',
-              fontWeight: '400',
-              color: 'var(--color-text-primary)',
-              lineHeight: 1.1,
-              letterSpacing: '-1px',
-              marginBottom: '28px',
-            }}
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, delay: 0.1 }}
-          >
-            A garden cafe like<br />
-            <em style={{ color: 'var(--color-accent)' }}>no other</em>
-          </motion.h2>
+        .about-visual {
+          position: relative;
+          padding-bottom: clamp(48px, 7vw, 88px);
+        }
+        .about-visual-main {
+          width: min(86%, 480px);
+          margin-left: auto;
+        }
+        .about-visual-overlap {
+          position: absolute;
+          left: 0;
+          bottom: 0;
+          width: 45%;
+          z-index: 2;
+        }
+        .about-visual-card {
+          position: absolute;
+          right: clamp(16px, 3vw, 36px);
+          bottom: 20%;
+          z-index: 3;
+          padding: 18px 26px;
+          background: var(--color-card);
+          border: 1px solid var(--color-border-strong);
+          border-radius: var(--radius-card);
+          box-shadow: 0 24px 48px -18px rgba(36, 23, 8, 0.25);
+        }
 
-          <motion.p
-            style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontSize: 'clamp(17px, 2vw, 20px)',
-              lineHeight: 1.8,
-              color: 'var(--color-text-secondary)',
-              marginBottom: '20px',
-            }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, delay: 0.2 }}
-          >
-            Nestled within The Savera Hotel's lush gardens in Mylapore, The Brew Room is more than a cafe — it's a sanctuary. A place where the hum of the city fades into birdsong, and every visit feels like a well-deserved pause.
-          </motion.p>
+        .about-stats {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          border-top: 1px solid var(--color-border);
+          border-bottom: 1px solid var(--color-border);
+          margin-top: clamp(80px, 10vw, 128px);
+        }
+        .about-stat {
+          padding: clamp(32px, 4.5vw, 52px) clamp(24px, 3vw, 44px);
+          border-left: 1px solid var(--color-border);
+        }
+        .about-stat:nth-child(odd) { border-left: none; }
+        .about-stat:nth-child(n + 3) { border-top: 1px solid var(--color-border); }
+        @media (min-width: 760px) {
+          .about-stats { grid-template-columns: repeat(4, 1fr); }
+          .about-stat:nth-child(odd) { border-left: 1px solid var(--color-border); }
+          .about-stat:first-child { border-left: none; }
+          .about-stat:nth-child(n + 3) { border-top: none; }
+        }
 
-          <motion.p
-            style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontSize: 'clamp(17px, 2vw, 20px)',
-              lineHeight: 1.8,
-              color: 'var(--color-text-secondary)',
-              marginBottom: '36px',
-            }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, delay: 0.3 }}
-          >
-            Our rustic-modern aesthetic, thoughtfully curated menu, and artisan coffee make The Brew Room the crown jewel of Chennai's cafe culture — consistently ranked #1 for afternoon tea in the city.
-          </motion.p>
+        .about-features {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+          gap: clamp(20px, 2.5vw, 28px);
+          margin-top: clamp(64px, 8vw, 96px);
+        }
+        .about-feature {
+          background: var(--color-card);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-card);
+          padding: clamp(28px, 3.5vw, 40px);
+          height: 100%;
+          transition: transform 0.3s var(--ease-lux),
+                      border-color 0.3s var(--ease-lux),
+                      box-shadow 0.3s var(--ease-lux);
+        }
+        .about-feature:hover {
+          transform: translateY(-6px);
+          border-color: var(--color-accent-light);
+          box-shadow: 0 24px 48px -18px rgba(135, 92, 32, 0.18);
+        }
+      `}</style>
 
-          <motion.a
-            href="#contact"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '10px',
-              fontFamily: "'Inter', sans-serif",
-              fontSize: '13px',
-              fontWeight: '600',
-              letterSpacing: '1.5px',
-              textTransform: 'uppercase',
-              color: 'var(--color-accent)',
-              textDecoration: 'none',
-            }}
-            initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : {}}
-            transition={{ delay: 0.5 }}
-            whileHover={{ gap: '16px' }}
-          >
-            Plan Your Visit
-            <span style={{ fontSize: '18px' }}>→</span>
-          </motion.a>
+      <div className="container-site">
+        <SectionHeader
+          index="01"
+          eyebrow="Our Story"
+          script="Our sanctuary in the city"
+          title="A garden cafe like <em>no other</em>"
+          style={{ marginBottom: 'clamp(56px, 8vw, 96px)' }}
+        />
+
+        {/* ── Editorial split ─────────────────────────────────── */}
+        <div className="about-grid">
+          {/* Left — long-form story */}
+          <div className="about-copy" style={{ maxWidth: '54ch' }}>
+            <motion.p className="prose-accent" style={{ marginBottom: '26px' }} {...fadeUp(0.05)}>
+              Nestled within The Savera Hotel&rsquo;s lush gardens in Mylapore, The Brew Room
+              is more than a cafe — it&rsquo;s a sanctuary. A place where the hum of the city
+              fades into birdsong, and every visit feels like a well-deserved pause.
+            </motion.p>
+            <motion.p className="prose-accent" style={{ marginBottom: '44px' }} {...fadeUp(0.15)}>
+              Our rustic-modern aesthetic, thoughtfully curated menu, and artisan coffee make
+              The Brew Room the crown jewel of Chennai&rsquo;s cafe culture — consistently
+              ranked No.1 for afternoon tea in the city.
+            </motion.p>
+            <motion.div {...fadeUp(0.25)}>
+              <a className="link-arrow" href="#reservation">
+                Plan Your Visit
+                <ArrowRight />
+              </a>
+            </motion.div>
+          </div>
+
+          {/* Right — layered composition with parallax drift */}
+          <motion.div className="about-visual" ref={visualRef} {...fadeIn(0.1)}>
+            <motion.div className="about-visual-main" style={{ y: reduce ? 0 : gardenY }}>
+              <motion.div {...fadeUp(0.1, 44)}>
+                <div className="img-frame arch" style={{ aspectRatio: '4 / 5' }}>
+                  <img
+                    src={IMAGES.about.garden}
+                    alt="Garden gazebo seating amid the lush Savera Hotel gardens"
+                    loading="lazy"
+                  />
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div className="about-visual-overlap" style={{ y: reduce ? 0 : baristaY }}>
+              <motion.div {...fadeUp(0.28, 40)}>
+                <div
+                  className="img-frame"
+                  style={{
+                    aspectRatio: '3 / 4',
+                    border: '6px solid var(--color-bg)',
+                    borderRadius: 'var(--radius-card)',
+                  }}
+                >
+                  <img
+                    src={IMAGES.about.barista}
+                    alt="Barista pouring an artisan coffee at The Brew Room"
+                    loading="lazy"
+                  />
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div className="about-visual-card" style={{ y: reduce ? 0 : cardY }}>
+              <motion.div {...fadeUp(0.42, 24)}>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 'clamp(20px, 2vw, 24px)',
+                    lineHeight: 1.2,
+                    color: 'var(--color-text-primary)',
+                  }}
+                >
+                  Until 11 PM
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    letterSpacing: '0.3em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-accent)',
+                    marginTop: '6px',
+                  }}
+                >
+                  Open Daily
+                </p>
+              </motion.div>
+            </motion.div>
+          </motion.div>
         </div>
 
-        {/* Right — image collage */}
-        <motion.div
-          style={{ position: 'relative', height: 'clamp(380px, 50vw, 520px)' }}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={isInView ? { opacity: 1, scale: 1 } : {}}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          {/* Main image */}
-          <motion.div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: '20%',
-              bottom: '20%',
-              borderRadius: '12px',
-              overflow: 'hidden',
-            }}
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.4 }}
-          >
-            <img
-              src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=800&q=85&fit=crop"
-              alt="Cafe garden ambiance"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(to bottom right, transparent 60%, rgba(13,10,7,0.3))',
-            }} />
-          </motion.div>
-
-          {/* Secondary image */}
-          <motion.div
-            style={{
-              position: 'absolute',
-              top: '25%',
-              right: 0,
-              width: '42%',
-              bottom: 0,
-              borderRadius: '12px',
-              overflow: 'hidden',
-              border: '3px solid var(--color-bg)',
-            }}
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.4 }}
-            initial={{ x: 20, opacity: 0 }}
-            animate={isInView ? { x: 0, opacity: 1 } : {}}
-            transition={{ duration: 0.7, delay: 0.4 }}
-          >
-            <img
-              src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=85&fit=crop"
-              alt="Artisan coffee"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          </motion.div>
-
-          {/* Floating accent card */}
-          <motion.div
-            style={{
-              position: 'absolute',
-              bottom: '5%',
-              left: '5%',
-              background: 'var(--color-accent)',
-              borderRadius: '10px',
-              padding: '16px 20px',
-              boxShadow: '0 20px 40px rgba(212,160,85,0.4)',
-            }}
-            initial={{ y: 20, opacity: 0 }}
-            animate={isInView ? { y: 0, opacity: 1 } : {}}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            whileHover={{ y: -4 }}
-          >
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '26px', fontWeight: '600', color: '#fff' }}>10AM</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'rgba(255,255,255,0.8)', letterSpacing: '1px', marginTop: '2px' }}>OPEN DAILY — 11PM</div>
-          </motion.div>
-        </motion.div>
-      </div>
-
-      {/* Stats row */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-        gap: '1px',
-        background: 'var(--color-border)',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        border: '1px solid var(--color-border)',
-      }}>
-        {stats.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            style={{
-              background: 'var(--color-surface)',
-              padding: 'clamp(24px, 4vw, 40px) clamp(20px, 3vw, 32px)',
-              textAlign: 'center',
-            }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
-            whileHover={{ background: 'var(--color-card)' }}
-          >
-            <div style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: 'clamp(28px, 4vw, 40px)',
-              fontWeight: '400',
-              color: 'var(--color-accent)',
-              marginBottom: '6px',
-            }}>
-              {stat.value}
+        {/* ── Stats band ──────────────────────────────────────── */}
+        <div className="about-stats">
+          {STATS.map((stat, i) => (
+            <div className="about-stat" key={stat.label}>
+              <motion.div {...fadeUp(0.1 + i * 0.12)}>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 'clamp(44px, 5vw, 64px)',
+                    lineHeight: 1,
+                    color: 'var(--color-accent)',
+                    marginBottom: '16px',
+                  }}
+                >
+                  {stat.value}
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: 'var(--color-text-primary)',
+                    letterSpacing: '0.04em',
+                    marginBottom: '4px',
+                  }}
+                >
+                  {stat.label}
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-accent)',
+                    fontStyle: 'italic',
+                    fontSize: '16px',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  {stat.sub}
+                </p>
+              </motion.div>
             </div>
-            <div style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: '13px',
-              fontWeight: '600',
-              color: 'var(--color-text-primary)',
-              letterSpacing: '0.3px',
-            }}>
-              {stat.label}
-            </div>
-            <div style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontSize: '13px',
-              color: 'var(--color-text-secondary)',
-              marginTop: '2px',
-            }}>
-              {stat.sub}
-            </div>
-          </motion.div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* Feature cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-        gap: '20px',
-        marginTop: 'clamp(40px, 6vw, 70px)',
-      }}>
-        {features.map((f, i) => (
-          <motion.div
-            key={f.title}
-            style={{
-              background: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '12px',
-              padding: 'clamp(24px, 3vw, 36px)',
-              cursor: 'default',
-            }}
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.4 + i * 0.12 }}
-            whileHover={{ y: -6, borderColor: 'var(--color-accent)', boxShadow: '0 20px 40px rgba(212,160,85,0.12)' }}
-          >
-            <div style={{ fontSize: '32px', marginBottom: '16px' }}>{f.icon}</div>
-            <h3 style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: '22px',
-              fontWeight: '500',
-              color: 'var(--color-text-primary)',
-              marginBottom: '10px',
-            }}>{f.title}</h3>
-            <p style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontSize: '16px',
-              lineHeight: 1.7,
-              color: 'var(--color-text-secondary)',
-            }}>{f.desc}</p>
-          </motion.div>
-        ))}
+        {/* ── Feature trio ────────────────────────────────────── */}
+        <div className="about-features">
+          {FEATURES.map((feature, i) => {
+            const Icon = feature.icon
+            return (
+              <motion.div key={feature.title} {...fadeUp(0.15 + i * 0.12)}>
+                <div className="about-feature">
+                  <div
+                    style={{
+                      width: '52px',
+                      height: '52px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      background: 'var(--color-accent)',
+                      color: 'var(--color-on-accent)',
+                      marginBottom: '24px',
+                    }}
+                  >
+                    <Icon />
+                  </div>
+                  <h3
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: '22px',
+                      fontWeight: 500,
+                      color: 'var(--color-text-primary)',
+                      marginBottom: '12px',
+                    }}
+                  >
+                    {feature.title}
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-accent)',
+                      fontSize: '16px',
+                      lineHeight: 1.7,
+                      color: 'var(--color-text-secondary)',
+                    }}
+                  >
+                    {feature.desc}
+                  </p>
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
       </div>
     </section>
   )

@@ -1,184 +1,351 @@
-import { useRef, useState } from 'react'
-import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { SectionHeader, fadeUp, EASE, ArrowRight, CloseIcon } from './ui'
+import { IMAGES } from '../data/images'
+import { stopScroll, startScroll } from '../lib/scroll'
 
-const galleryImages = [
-  {
-    src: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&q=85&fit=crop',
-    alt: 'Cafe interior',
-    span: 'large',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=85&fit=crop',
-    alt: 'Coffee bar',
-    span: 'small',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=600&q=85&fit=crop',
-    alt: 'Garden seating',
-    span: 'small',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=600&q=85&fit=crop',
-    alt: 'Latte art',
-    span: 'medium',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1470338745628-171cf53de3a8?w=600&q=85&fit=crop',
-    alt: 'Pastries',
-    span: 'medium',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?w=800&q=85&fit=crop',
-    alt: 'Outdoor dining',
-    span: 'large',
-  },
-]
+/* ─────────────────────────────────────────────────────────────
+   GALLERY — "Moments"
+   Editorial masonry of life at the cafe, with a cinematic
+   lightbox viewer (keyboard navigable).
+   ───────────────────────────────────────────────────────────── */
+
+const SHOTS = IMAGES.gallery
+const COUNT = SHOTS.length
+
+const pad = (n) => String(n).padStart(2, '0')
+
+const circleBtn = {
+  width: '52px',
+  height: '52px',
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#f2e7d3',
+  cursor: 'pointer',
+  flexShrink: 0,
+}
 
 export default function Gallery() {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-80px' })
-  const [lightbox, setLightbox] = useState(null)
+  const [active, setActive] = useState(null)
+  const reduce = useReducedMotion()
+  const open = active !== null
+  const dialogRef = useRef(null)
+  const openerRef = useRef(null) /* tile that opened the viewer — focus returns here */
+
+  const paginate = useCallback((dir) => {
+    setActive((a) => (a === null ? a : (a + dir + COUNT) % COUNT))
+  }, [])
+
+  /* Modal behaviour while open: scroll lock (CSS + Lenis), keyboard
+     controls, and a focus trap across the three dialog buttons */
+  useEffect(() => {
+    if (!open) return
+    document.body.classList.add('lightbox-open')
+    stopScroll()
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setActive(null)
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        paginate(1)
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        paginate(-1)
+      } else if (e.key === 'Tab') {
+        const nodes = dialogRef.current?.querySelectorAll('button')
+        if (!nodes?.length) return
+        const list = [...nodes]
+        const first = list[0]
+        const last = list[list.length - 1]
+        if (!dialogRef.current.contains(document.activeElement)) {
+          e.preventDefault()
+          first.focus()
+        } else if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.classList.remove('lightbox-open')
+      startScroll()
+      openerRef.current?.focus()
+    }
+  }, [open, paginate])
+
+  const openViewer = (e, i) => {
+    openerRef.current = e.currentTarget
+    setActive(i)
+  }
+
+  const onTileKey = (e, i) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      openViewer(e, i)
+    }
+  }
 
   return (
     <section
       id="gallery"
-      ref={ref}
+      className="section-pad"
       style={{
-        padding: 'clamp(80px, 12vw, 140px) clamp(20px, 5vw, 60px)',
-        maxWidth: '1200px',
-        margin: '0 auto',
+        background: 'var(--color-surface)',
+        borderTop: '1px solid var(--color-border)',
+        borderBottom: '1px solid var(--color-border)',
       }}
     >
-      {/* Header */}
-      <div style={{ marginBottom: 'clamp(40px, 6vw, 70px)' }}>
-        <motion.div
-          style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}
-          initial={{ opacity: 0, x: -20 }}
-          animate={isInView ? { opacity: 1, x: 0 } : {}}
-        >
-          <div style={{ width: '32px', height: '1px', background: 'var(--color-accent)' }} />
-          <span style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: '12px',
-            letterSpacing: '5px',
-            color: 'var(--color-accent)',
-            textTransform: 'uppercase',
-          }}>Visual Journey</span>
-        </motion.div>
+      <style>{`
+        /* Curated 3×4 collage — every cell filled, each image placed
+           to suit its aspect (talls in 1×2, wides in 2×1/2×2). */
+        .gal-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          grid-auto-rows: clamp(170px, 16vw, 235px);
+          gap: 16px;
+        }
+        .gal-grid > :nth-child(1) { grid-column: 1 / 3; grid-row: 1 / 3; } /* interior — wide */
+        .gal-grid > :nth-child(2) { grid-column: 3 / 4; grid-row: 1 / 3; } /* coffee bar — tall */
+        .gal-grid > :nth-child(3) { grid-column: 1 / 2; grid-row: 3 / 5; } /* garden — tall */
+        .gal-grid > :nth-child(4) { grid-column: 2 / 3; grid-row: 3 / 4; } /* latte art */
+        .gal-grid > :nth-child(5) { grid-column: 3 / 4; grid-row: 3 / 4; } /* pastries */
+        .gal-grid > :nth-child(6) { grid-column: 2 / 4; grid-row: 4 / 5; } /* evening — wide */
+        .gal-shade {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            to top,
+            rgba(24, 14, 5, 0.8) 0%,
+            rgba(24, 14, 5, 0.3) 40%,
+            transparent 70%
+          );
+          opacity: 0;
+          transform: translateY(22%);
+          transition: opacity 0.35s var(--ease-lux), transform 0.5s var(--ease-lux);
+          pointer-events: none;
+        }
+        .gal-cap {
+          position: absolute;
+          left: 20px;
+          right: 20px;
+          bottom: 18px;
+          font-family: var(--font-body);
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          color: #f2e7d3;
+          opacity: 0;
+          transform: translateY(14px);
+          transition: opacity 0.4s var(--ease-lux), transform 0.55s var(--ease-lux);
+          pointer-events: none;
+        }
+        .gal-tile:hover .gal-shade,
+        .gal-tile:focus-visible .gal-shade,
+        .gal-tile:hover .gal-cap,
+        .gal-tile:focus-visible .gal-cap {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        @media (max-width: 640px) {
+          .gal-grid {
+            grid-template-columns: repeat(2, 1fr);
+            grid-auto-rows: 165px;
+          }
+          /* 2-col pack: wide / pair / pair / wide */
+          .gal-grid > :nth-child(1) { grid-column: 1 / 3; grid-row: auto; }
+          .gal-grid > :nth-child(2),
+          .gal-grid > :nth-child(3),
+          .gal-grid > :nth-child(4),
+          .gal-grid > :nth-child(5) { grid-column: auto; grid-row: auto; }
+          .gal-grid > :nth-child(6) { grid-column: 1 / 3; grid-row: auto; }
+        }
+        @media (max-width: 420px) {
+          .gal-grid { grid-template-columns: 1fr; grid-auto-rows: 200px; }
+          .gal-grid > * { grid-column: auto !important; grid-row: auto !important; }
+        }
+      `}</style>
 
-        <motion.h2
-          style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: 'clamp(36px, 5vw, 60px)',
-            fontWeight: '400',
-            color: 'var(--color-text-primary)',
-            letterSpacing: '-1px',
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.1 }}
-        >
-          Life at <em style={{ color: 'var(--color-accent)' }}>The Brew Room</em>
-        </motion.h2>
+      <div className="container-site">
+        <SectionHeader
+          index="04"
+          eyebrow="Moments"
+          script="Moments in the garden"
+          title="Life at <em>The Brew Room</em>"
+        />
+
+        <div className="gal-grid" style={{ marginTop: 'clamp(56px, 7vw, 88px)' }}>
+          {SHOTS.map((shot, i) => (
+            <motion.div
+              key={shot.src}
+              className="gal-tile img-frame"
+              style={{ borderRadius: 'var(--radius-card)', cursor: 'zoom-in' }}
+              role="button"
+              tabIndex={0}
+              aria-label={`View photo: ${shot.alt}`}
+              onClick={(e) => openViewer(e, i)}
+              onKeyDown={(e) => onTileKey(e, i)}
+              {...fadeUp((i % 3) * 0.1, 40)}
+            >
+              <img src={shot.src} alt={shot.alt} loading="lazy" />
+              <div className="gal-shade" aria-hidden="true" />
+              <span className="gal-cap" aria-hidden="true">
+                {shot.alt}
+              </span>
+            </motion.div>
+          ))}
+        </div>
       </div>
 
-      {/* Masonry-style grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gridAutoRows: '220px',
-        gap: '14px',
-      }}
-        className="gallery-grid"
-      >
-        {galleryImages.map((img, i) => (
-          <motion.div
-            key={img.src}
-            style={{
-              borderRadius: '12px',
-              overflow: 'hidden',
-              cursor: 'zoom-in',
-              gridColumn: img.span === 'large' ? 'span 2' : 'span 1',
-              gridRow: img.span === 'large' ? 'span 2' : 'span 1',
-            }}
-            initial={{ opacity: 0, scale: 0.94 }}
-            animate={isInView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 0.6, delay: i * 0.1 }}
-            whileHover={{ scale: 1.02 }}
-            onClick={() => setLightbox(img)}
-          >
-            <motion.img
-              src={img.src}
-              alt={img.alt}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block',
-              }}
-              whileHover={{ scale: 1.06 }}
-              transition={{ duration: 0.5 }}
-            />
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Lightbox */}
+      {/* ── Lightbox ─────────────────────────────────────────── */}
       <AnimatePresence>
-        {lightbox && (
+        {open && (
           <motion.div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 1000,
-              background: 'rgba(0,0,0,0.92)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px',
-              cursor: 'zoom-out',
-            }}
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Gallery image viewer"
+            data-lenis-prevent
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setLightbox(null)}
+            transition={{ duration: 0.35, ease: EASE }}
+            onClick={() => setActive(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1300,
+              background: 'rgba(15, 9, 3, 0.95)',
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 'clamp(16px, 4vw, 48px)',
+            }}
           >
-            <motion.img
-              src={lightbox.src}
-              alt={lightbox.alt}
-              style={{
-                maxWidth: '90vw',
-                maxHeight: '85vh',
-                objectFit: 'contain',
-                borderRadius: '12px',
+            {/* Close */}
+            <button
+              type="button"
+              className="glass-panel"
+              aria-label="Close image viewer"
+              autoFocus
+              onClick={(e) => {
+                e.stopPropagation()
+                setActive(null)
               }}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            />
+              style={{
+                ...circleBtn,
+                position: 'absolute',
+                top: 'clamp(16px, 3vw, 32px)',
+                right: 'clamp(16px, 3vw, 32px)',
+              }}
+            >
+              <CloseIcon size={20} />
+            </button>
+
+            {/* Previous */}
+            <button
+              type="button"
+              className="glass-panel"
+              aria-label="Previous image"
+              onClick={(e) => {
+                e.stopPropagation()
+                paginate(-1)
+              }}
+              style={{
+                ...circleBtn,
+                position: 'absolute',
+                left: 'clamp(10px, 3vw, 40px)',
+                top: '50%',
+                transform: 'translateY(-50%)',
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{ display: 'flex', transform: 'rotate(180deg)' }}
+              >
+                <ArrowRight size={18} />
+              </span>
+            </button>
+
+            {/* Next */}
+            <button
+              type="button"
+              className="glass-panel"
+              aria-label="Next image"
+              onClick={(e) => {
+                e.stopPropagation()
+                paginate(1)
+              }}
+              style={{
+                ...circleBtn,
+                position: 'absolute',
+                right: 'clamp(10px, 3vw, 40px)',
+                top: '50%',
+                transform: 'translateY(-50%)',
+              }}
+            >
+              <ArrowRight size={18} />
+            </button>
+
+            {/* Image + caption — clicks here must not close the viewer */}
+            <figure
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '18px',
+                cursor: 'default',
+              }}
+            >
+              <motion.img
+                key={active}
+                src={SHOTS[active].src}
+                alt={SHOTS[active].alt}
+                initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
+                animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+                transition={
+                  reduce ? { duration: 0.2 } : { duration: 0.55, ease: EASE }
+                }
+                style={{
+                  maxWidth: '88vw',
+                  maxHeight: '82vh',
+                  objectFit: 'contain',
+                  borderRadius: '4px',
+                  boxShadow: '0 40px 90px -20px rgba(0, 0, 0, 0.7)',
+                }}
+              />
+              <figcaption
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '20px',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  letterSpacing: '0.3em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                <span style={{ color: '#f2e7d3' }}>{SHOTS[active].alt}</span>
+                <span style={{ color: 'rgba(242, 231, 211, 0.55)' }}>
+                  {pad(active + 1)} / {pad(COUNT)}
+                </span>
+              </figcaption>
+            </figure>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <style>{`
-        @media (max-width: 640px) {
-          .gallery-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            grid-auto-rows: 160px !important;
-          }
-        }
-        @media (max-width: 420px) {
-          .gallery-grid {
-            grid-template-columns: 1fr !important;
-            grid-auto-rows: 220px !important;
-          }
-          .gallery-grid > div {
-            grid-column: span 1 !important;
-            grid-row: span 1 !important;
-          }
-        }
-      `}</style>
     </section>
   )
 }
