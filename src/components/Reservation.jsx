@@ -1,12 +1,26 @@
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { SITE } from '../data/site'
 import { IMAGES } from '../data/images'
-import { fadeUp, fadeIn, Reveal, Stamp, ArrowRight, ArrowDown, Phone, Leaf } from './ui'
+import { EASE, fadeUp, fadeIn, Reveal, Stamp, ArrowRight, ArrowDown, Phone, Leaf, Star } from './ui'
 
 /* ─────────────────────────────────────────────────────────────
    RESERVATION — editorial split: arched table imagery / quiet
-   request form on paper. No backend; submitting opens a call.
+   request form on paper. Demo behaviour: submitting swaps the
+   form for an in-card confirmation (no backend — the real build
+   would email/SMS the cafe, who then confirm by phone).
    ───────────────────────────────────────────────────────────── */
+
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+]
+
+function prettyDate(iso) {
+  if (!iso) return ''
+  const [y, m, d] = iso.split('-')
+  return `${+d} ${MONTHS[+m - 1]} ${y}`
+}
 
 /* 10:00 AM → 10:00 PM, hourly */
 const TIMES = Array.from({ length: 13 }, (_, i) => {
@@ -47,9 +61,18 @@ function Field({ id, label, delay, children }) {
 }
 
 export default function Reservation() {
+  const reduce = useReducedMotion()
+  const [booking, setBooking] = useState(null)
+
   const handleSubmit = (e) => {
     e.preventDefault()
-    window.location.href = SITE.phoneHref
+    const data = new FormData(e.currentTarget)
+    setBooking({
+      name: (data.get('name') || '').toString().trim(),
+      date: prettyDate(data.get('date')),
+      time: data.get('time'),
+      guests: data.get('guests'),
+    })
   }
 
   return (
@@ -71,6 +94,15 @@ export default function Reservation() {
         @media (min-width: 980px) {
           .resv-grid { grid-template-columns: 1fr 1.08fr; }
         }
+        /* keeps the card height steady when the form swaps to the
+           confirmation, so the page below doesn't jump */
+        .resv-swap {
+          min-height: clamp(340px, 40vw, 420px);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .resv-swap > * { width: 100%; }
         .resv-fields {
           display: grid;
           grid-template-columns: 1fr;
@@ -238,7 +270,144 @@ export default function Reservation() {
               Tell us when, and we will keep a quiet corner of the garden ready for you.
             </motion.p>
 
-            <form
+            <div className="resv-swap" aria-live="polite">
+            <AnimatePresence mode="wait" initial={false}>
+            {booking ? (
+              /* ── Confirmation state ─────────────────────────── */
+              <motion.div
+                key="confirmed"
+                initial={reduce ? { opacity: 0 } : { opacity: 0, y: 26 }}
+                animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.7, ease: EASE }}
+                style={{
+                  marginTop: 'clamp(36px, 4vw, 52px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                }}
+              >
+                {/* Gold seal with a drawing checkmark + sparkles */}
+                <div style={{ position: 'relative' }}>
+                  <motion.div
+                    initial={reduce ? { opacity: 0 } : { scale: 0.4, opacity: 0 }}
+                    animate={reduce ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.65, delay: 0.15, ease: EASE }}
+                    style={{
+                      width: 84,
+                      height: 84,
+                      borderRadius: '50%',
+                      background: 'var(--color-accent)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 22px 44px -14px rgba(135, 92, 32, 0.55)',
+                    }}
+                  >
+                    <svg width="38" height="38" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+                      <motion.path
+                        d="M8 20.5 L15.5 27.5 L30 10.5"
+                        stroke="var(--color-on-accent)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        initial={{ pathLength: reduce ? 1 : 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 0.55, delay: 0.55, ease: EASE }}
+                      />
+                    </svg>
+                  </motion.div>
+                  {/* sparkles */}
+                  {[
+                    { top: -10, right: -14, size: 15, delay: 0.85 },
+                    { bottom: -4, left: -18, size: 11, delay: 1.0 },
+                    { top: 8, left: -26, size: 8, delay: 1.12 },
+                  ].map((s, i) => (
+                    <motion.span
+                      key={i}
+                      aria-hidden="true"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.45, delay: reduce ? 0 : s.delay, ease: EASE }}
+                      style={{
+                        position: 'absolute',
+                        top: s.top,
+                        right: s.right,
+                        bottom: s.bottom,
+                        left: s.left,
+                        color: 'var(--color-accent-light)',
+                        display: 'flex',
+                      }}
+                    >
+                      <Star size={s.size} />
+                    </motion.span>
+                  ))}
+                </div>
+
+                <motion.h3
+                  className="display"
+                  initial={{ opacity: 0, y: reduce ? 0 : 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, delay: 0.75, ease: EASE }}
+                  style={{ fontSize: 'clamp(28px, 3.2vw, 40px)', marginTop: 28 }}
+                >
+                  Your table is set{booking.name ? `, ${booking.name.split(/\s+/)[0]}` : ''}<em>.</em>
+                </motion.h3>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.7, delay: 0.95, ease: EASE }}
+                  style={{
+                    marginTop: 14,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: '0.24em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-accent)',
+                  }}
+                >
+                  {booking.date} · {booking.time} · {booking.guests}{' '}
+                  {booking.guests === '1' ? 'Guest' : 'Guests'}
+                </motion.p>
+
+                <motion.p
+                  className="prose-accent"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.7, delay: 1.1, ease: EASE }}
+                  style={{ marginTop: 16, maxWidth: '42ch' }}
+                >
+                  Your request is on its way to the cafe — our team will call you
+                  shortly to confirm. In a hurry?{' '}
+                  <a
+                    href={SITE.phoneHref}
+                    style={{ color: 'var(--color-accent)', textDecoration: 'none', whiteSpace: 'nowrap' }}
+                  >
+                    {SITE.phone}
+                  </a>
+                </motion.p>
+
+                <motion.button
+                  type="button"
+                  className="link-arrow"
+                  onClick={() => setBooking(null)}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.7, delay: 1.3, ease: EASE }}
+                  style={{ marginTop: 18, background: 'none', border: 'none' }}
+                >
+                  Book another table
+                  <ArrowRight size={14} />
+                </motion.button>
+              </motion.div>
+            ) : (
+            <motion.form
+              key="form"
+              exit={reduce ? { opacity: 0 } : { opacity: 0, y: -14 }}
+              transition={{ duration: 0.4, ease: EASE }}
               onSubmit={handleSubmit}
               aria-label="Reservation request"
               style={{ marginTop: 'clamp(36px, 4vw, 52px)' }}
@@ -300,7 +469,7 @@ export default function Reservation() {
 
               <motion.div {...fadeUp(0.48, 24)} style={{ marginTop: 'clamp(36px, 4vw, 48px)' }}>
                 <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                  Request by Phone
+                  Book My Table
                   <ArrowRight size={15} />
                 </button>
                 <p
@@ -314,10 +483,13 @@ export default function Reservation() {
                     textAlign: 'center',
                   }}
                 >
-                  Submitting opens a call — we confirm every reservation personally.
+                  No payment needed — the cafe confirms every booking personally.
                 </p>
               </motion.div>
-            </form>
+            </motion.form>
+            )}
+            </AnimatePresence>
+            </div>
 
             <motion.div
               {...fadeUp(0.55, 20)}
