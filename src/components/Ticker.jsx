@@ -9,10 +9,8 @@ export default function Ticker() {
 
   return (
     <div
-      className="panel-dark"
       aria-hidden="true"
       style={{
-        background: 'var(--panel-bg)',
         overflow: 'hidden',
         padding: 'clamp(48px, 7vw, 104px) 0 clamp(56px, 8vw, 120px)',
       }}
