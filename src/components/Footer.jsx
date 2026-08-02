@@ -94,7 +94,8 @@ export default function Footer() {
         }
         .ftr-credit {
           color: var(--panel-gold);
-          font-weight: 600;
+          font-weight: 700;
+          letter-spacing: 0.08em;
           text-decoration: none;
           border-bottom: 1px solid rgba(208, 167, 92, 0.35);
           padding-bottom: 1px;
@@ -331,14 +332,17 @@ export default function Footer() {
               color: 'var(--panel-text-soft)',
             }}
           >
+            <span aria-hidden="true" style={{ color: 'var(--panel-gold)' }}>
+              ✨
+            </span>{' '}
             Designed &amp; Developed by{' '}
             <a
               className="ftr-credit"
-              href="https://iamshoaib.tech"
+              href="https://zyntec.in"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Shoaib
+              ZYNTEC
             </a>
           </p>
         </motion.div>
