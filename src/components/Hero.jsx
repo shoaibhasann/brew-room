@@ -120,8 +120,8 @@ export default function Hero() {
         }
         .hero-word--outline {
           color: transparent;
-          -webkit-text-stroke: 1.5px var(--color-text-primary);
-          font-style: italic;
+          -webkit-text-stroke: clamp(1.6px, 0.22vw, 3px) var(--color-text-primary);
+          paint-order: stroke;
         }
         .hero-glass-wrap { position: relative; z-index: 3; }
         @media (min-width: 1024px) {
@@ -207,16 +207,15 @@ export default function Hero() {
             Good coffee, great company
           </motion.span>
 
-          {/* COLD / BREW — solid line + italic outline line */}
+          {/* COLD / BREW — solid line + stroked outline line */}
           <h1
             style={{
               fontFamily: 'var(--font-display)',
-              fontOpticalSizing: 'auto',
-              fontWeight: 600,
+              fontWeight: 700,
               textTransform: 'uppercase',
-              fontSize: 'clamp(68px, 10.5vw, 168px)',
-              lineHeight: 0.92,
-              letterSpacing: '-0.015em',
+              fontSize: 'clamp(66px, 10vw, 158px)',
+              lineHeight: 0.94,
+              letterSpacing: '0.01em',
               color: 'var(--color-text-primary)',
               margin: 'clamp(12px, 2vh, 22px) 0 0',
             }}
@@ -227,12 +226,12 @@ export default function Hero() {
             </MaskedLine>
           </h1>
 
-          {/* Gold rule + price */}
+          {/* Signature line under the wordmark */}
           <motion.div
             style={{
               display: 'flex',
-              alignItems: 'baseline',
-              gap: 22,
+              alignItems: 'center',
+              gap: 18,
               marginTop: 'clamp(18px, 3vh, 30px)',
             }}
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 18 }}
@@ -241,34 +240,19 @@ export default function Hero() {
           >
             <span
               aria-hidden="true"
-              style={{
-                width: 64,
-                height: 2,
-                background: 'var(--color-accent-light)',
-                alignSelf: 'center',
-              }}
+              style={{ width: 64, height: 2, background: 'var(--color-accent-light)' }}
             />
-            <span
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(26px, 3vw, 38px)',
-                fontWeight: 500,
-                color: 'var(--color-accent)',
-              }}
-            >
-              ₹320
-            </span>
             <span
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: '0.28em',
+                fontWeight: 700,
+                letterSpacing: '0.3em',
                 textTransform: 'uppercase',
-                color: 'var(--color-text-secondary)',
+                color: 'var(--color-accent)',
               }}
             >
-              Signature Serve
+              The Signature Serve
             </span>
           </motion.div>
 

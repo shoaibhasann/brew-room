@@ -34,12 +34,11 @@
 
     color-scheme: light;
 
-    /* Typography — Fraunces (variable, optical sizing) carries both
-       display and serif-prose roles; Manrope is the modern grotesque
-       for UI and body copy. */
-    --font-display: 'Fraunces', Georgia, serif;
+    /* Typography — Clash Display carries every heading; Manrope
+       handles UI, body and long-form copy. One modern sans voice. */
+    --font-display: 'Clash Display', 'Manrope', system-ui, sans-serif;
     --font-body: 'Manrope', system-ui, sans-serif;
-    --font-accent: 'Fraunces', Georgia, serif;
+    --font-accent: 'Manrope', system-ui, sans-serif;
     --font-script: 'Kaushan Script', cursive;
 
     /* Motion */
@@ -181,29 +180,26 @@ body::after {
   letter-spacing: 0.01em;
 }
 
-/* Display headings — Fraunces interpolates its optical size axis
-   automatically; 450 weight keeps large sizes sturdy but refined */
+/* Display headings — Clash Display semibold. The em highlight is
+   gold, not italic (Clash has no true italics). */
 .display {
   font-family: var(--font-display);
-  font-optical-sizing: auto;
-  font-weight: 450;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   line-height: 1.04;
   color: var(--color-text-primary);
 }
 .display em {
-  font-style: italic;
+  font-style: normal;
   color: var(--color-accent);
 }
 
-/* Long-form serif body copy — Fraunces runs a larger x-height than
-   the old Cormorant, so sizes come down a step */
+/* Long-form body copy */
 .prose-accent {
   font-family: var(--font-accent);
-  font-optical-sizing: auto;
-  font-size: clamp(15.5px, 1.8vw, 18px);
-  font-weight: 350;
-  line-height: 1.8;
+  font-size: clamp(15px, 1.7vw, 17px);
+  font-weight: 400;
+  line-height: 1.85;
   color: var(--color-text-secondary);
 }
 
