@@ -233,6 +233,8 @@ export default function About() {
                   style={{
                     fontFamily: 'var(--font-display)',
                     fontSize: 'clamp(44px, 5vw, 64px)',
+                    fontWeight: 600,
+                    letterSpacing: '-0.01em',
                     lineHeight: 1,
                     color: 'var(--color-accent)',
                     marginBottom: '16px',

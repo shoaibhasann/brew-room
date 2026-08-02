@@ -253,8 +253,8 @@ export default function Navbar() {
               style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: 22,
-                fontWeight: 400,
-                letterSpacing: '0.01em',
+                fontWeight: 600,
+                letterSpacing: '0.005em',
                 color: 'var(--color-text-primary)',
               }}
             >

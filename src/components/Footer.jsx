@@ -137,7 +137,7 @@ export default function Footer() {
           <h2
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 400,
+              fontWeight: 600,
               fontSize: 'clamp(64px, 12vw, 150px)',
               lineHeight: 0.9,
               letterSpacing: '-0.03em',

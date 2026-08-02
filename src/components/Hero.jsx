@@ -127,7 +127,7 @@ export default function Hero() {
         @media (min-width: 1024px) {
           .hero-grid { grid-template-columns: 1.1fr 0.9fr; }
           /* the glass reaches back over the headline column */
-          .hero-glass-wrap { margin-left: clamp(-140px, -9vw, -60px); }
+          .hero-glass-wrap { margin-left: clamp(-60px, -3.5vw, -14px); }
         }
         @media (max-width: 1023px) {
           .hero-circle { display: none; }
